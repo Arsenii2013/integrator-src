@@ -1,15 +1,17 @@
+#include "PSPL.h"
+#include "test_gen.h"
 
 #ifdef TEST
-#include "test_gen.h"
 #include <time.h>
 
-uint64_t c0;
+uint64_t cp;
+uint64_t lostDDS_SYNC;
 uint32_t repeat;
 
 #define  MAX_EVENTS 10
-uint32_t eventsN   = 4;
-uint32_t events [MAX_EVENTS] = {0x12, 0x13, 0x17, 0x18};
-uint64_t delays [MAX_EVENTS] = {0,    115,  200,   376};
+uint32_t eventsN   = 1;
+uint32_t events [MAX_EVENTS] = {0x12};
+uint64_t cycles [MAX_EVENTS] = {0};
 
 uint64_t micros()
 {
@@ -19,48 +21,55 @@ uint64_t micros()
     return us;
 }
 
-void testGenInit(uint32_t * newEvents, uint64_t * newDelays, uint32_t cnt, uint32_t newRepeat){
+void testGenInit(uint32_t * newEvents, uint64_t * newCycles, uint32_t cnt, uint32_t newRepeat){
     eventsN = cnt;
     for(uint32_t i = 0; i < eventsN; i++){
         events[i] = newEvents[i];
-        delays[i] = newDelays[i];
+        cycles[i] = newCycles[i];
     }
     repeat = newRepeat;
-    c0 = micros();
-}
+    cp = micros();
+    lostDDS_SYNC = 0;
 
-uint32_t testGenDDS_SYNC(){
-    uint64_t c1 = micros();
-    return (c1-c0) % 20 == 0;
-}
-
-
-uint32_t testGenEvent(){
-    const uint64_t prd = 1000; // in mks
-
-    static int activs [2][MAX_EVENTS];
-    static int activsNotRepeat [MAX_EVENTS];
-
-    uint64_t c1  = micros();
-    uint64_t div = ((c1 - c0) / prd) % 2;
-    uint64_t dt  = (c1 - c0) % prd;
-
-    if(repeat){
-        for(int i = 0; i < eventsN; i ++){
-            if(dt > delays[i] && !activs[div][i]){
-                activs[(div+1) % 2][i] = 0;
-                activs[div][i] = 1;
-                return events[i];
-            }
+    int cycle = 0;
+    for(int i = 0; i < cnt; i ++){
+        if(newCycles[i] < cycle){
+            TM_PRINTF("ERROR: testGenEvents events must go in non-decreasing order\n");
         }
-    } else {
-        for(int i = 0; i < eventsN; i ++){
-            if(dt > delays[i] && !activsNotRepeat[i]){
-                activsNotRepeat[i] = 1;
-                return events[i];
-            }
-        }
+        cycle = newCycles[i];
     }
+}
+
+void testWaitDDS_SYNC(){
+    uint64_t cc = micros();
+    uint64_t betveenDDS_SYNC = cc - cp;    
+    while(betveenDDS_SYNC == 0 || betveenDDS_SYNC % DDS_SYNC_PRD_US != 0){ 
+        cc = micros();
+        betveenDDS_SYNC = cc - cp;
+    }
+    lostDDS_SYNC = betveenDDS_SYNC / DDS_SYNC_PRD_US;
+    lostDDS_SYNC = 1;
+    cp = cc;
+}
+
+
+uint32_t testReadEvents(cyclicBuffer * buff){
+    int prd = cycles[eventsN-1] + 1;
+
+    static uint32_t cycle = 0;
+    uint32_t l = lostDDS_SYNC;
+    for(; lostDDS_SYNC; lostDDS_SYNC --){
+        for(uint32_t i = 0; i < eventsN; i ++){
+            if(cycles[i] == cycle){
+                buff->data[(buff->start + buff->size) % FIFO_SIZE] = events[i];
+                buff->size++;
+            }
+        }
+        buff->data[(buff->start + buff->size) % FIFO_SIZE] = 0x100;
+        buff->size++;
+        cycle = (cycle + 1) % prd;
+    }
+
     return 0;
 }
 #endif

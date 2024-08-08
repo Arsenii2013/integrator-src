@@ -10,6 +10,13 @@ typedef struct
     uint32_t CR_C;
     uint32_t AFE_ERR;
     uint32_t LOG_ERR;
+    uint32_t HP_ERROR;
+    uint32_t B0;
+    uint32_t B0_EV;
+    uint32_t START_EV;
+    uint32_t STOP_EV;
+    uint32_t RESET_EV;
+    uint32_t CALIBRATION_EV;
 } statusControlRegisters;
 
 #define SR_TIME       0
@@ -45,6 +52,13 @@ void statusLogSwitch();
 void statusLogOverflow();
 
 void controlDDS_SYNC();
+
+uint32_t controlGetB0();
+uint32_t controlB0();
+uint32_t controlSTART();
+uint32_t controlSTOP();
+uint32_t controlRESET();
+uint32_t controlCAL();
 
 #ifdef TEST
 void initSCR();

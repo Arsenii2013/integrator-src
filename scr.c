@@ -108,3 +108,32 @@ void statusLogOverflow(){
     TM_PRINTF("DEBUG: LOG: bank overflow\n\r");
     #endif
 }
+
+uint32_t controlGetB0(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->B0;
+}
+uint32_t controlB0(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->B0_EV;
+}
+
+uint32_t controlSTART(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->START_EV;
+}
+
+uint32_t controlSTOP(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->STOP_EV;
+}
+
+uint32_t controlRESET(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->RESET_EV;
+}
+
+uint32_t controlCAL(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->CALIBRATION_EV;
+}

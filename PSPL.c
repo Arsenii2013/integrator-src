@@ -73,12 +73,13 @@ uint32_t findLastDDS_SYNC(cyclicBuffer * buff){
             cnt++;
         }
     }
-    if(cnt != 1){
+    if(cnt > 1){
         statusNotEnoughtTime();
     }
     #ifdef DEBUG
     if(cnt == 0){
-        TM_PRINTF("DEBUG: zero DDS_SYNC events");
+        TM_PRINTF("DEBUG: zero DDS_SYNC events\n\r");
+        return 0xffff;
     }
     #endif
     return last % FIFO_SIZE;
@@ -88,4 +89,12 @@ void clearDDS_SYNC(cyclicBuffer * buff){
     for(uint32_t i = 0; i < buff->size; i++){
         buff->data[(buff->start + i) % FIFO_SIZE] &= 0xFF;
     }
+}
+
+
+void clearEvents(){
+    while(!(*((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + SR)) & 0x1)){
+        volatile uint32_t rd = *((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
+    }
+    return;
 }

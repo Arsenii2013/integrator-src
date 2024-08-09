@@ -92,7 +92,6 @@ void logg(logEntry e){
 }
 
 int loggerDDS_SYNC(void*){
-    TM_PRINTF("log DDS_SYNC\n\r");
     logRegs* regs = (logRegs*) REGS_BASE_LOG;
 
     regs->CR |= regs->CR_S;

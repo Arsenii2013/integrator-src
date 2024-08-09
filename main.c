@@ -41,6 +41,7 @@ int main()
     #else
     init_platform();
     initPStoPL();
+    clearEvents();
 
     #ifdef DEBUG
     TM_PRINTF("start\n\r");
@@ -84,10 +85,10 @@ int main()
         schedulerDDS_SYNC(); // применить установки с прошлого цикла
 
         while(ev_buff.start <= lastDDS_SYNC){
+            if(ev_buff.size == 0)
+                break;
             schedulerEvent(ev_buff.data[ev_buff.start % FIFO_SIZE]);
             ev_buff.start ++;
-            if(ev_buff.size == 0)
-                return 0;
             ev_buff.size --;
         }
         ev_buff.start = ev_buff.start % FIFO_SIZE;

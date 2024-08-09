@@ -2,7 +2,7 @@
 #include "PSPL.h"
 #include "logger.h"
 #include "scheduler.h"
-#include "math.h"
+#include "sin_integral_emulator.h"
 
 #ifdef TEST
 #include "test_gen.h"
@@ -14,19 +14,6 @@ int DDS_SYNCPrint(void *){
 }
 int eventPrint(uint32_t ev, void *){
     TM_PRINTF("Event %d\n\r", ev);
-    return 0;
-}
-
-int DDS_SYNCCalcSin(void*){
-    static uint64_t timestamp = 0;
-    float arg = (float)timestamp / 100.* 2 * M_PI;
-    float sinus = sin(arg);
-    float cosinus = cos(arg); 
-
-    logIntegrator l = {.B=timestamp, .integralDigital=(*(uint32_t *) &sinus), .integralAnalog=(*(uint32_t *) &cosinus)};
-
-    logg(*(logEntry *)&l);
-    timestamp++;
     return 0;
 }
 
@@ -54,6 +41,7 @@ int main()
     #else
     init_platform();
     initPStoPL();
+    clearEvents();
 
     #ifdef DEBUG
     TM_PRINTF("start\n\r");
@@ -71,7 +59,7 @@ int main()
         //{.name="return", .DDS_SYNCCallback=DDS_SYNCReturn, .eventCallback=eventReturn, .appData=NULL}, 
         //{.name="data", .DDS_SYNCCallback=DDS_SYNCAppData, .eventCallback=eventAppData, .appData=&lev}, 
         {.name="logger", .DDS_SYNCCallback=loggerDDS_SYNC, .eventCallback=loggerEvent, .appData=NULL}, 
-        {.name="graph", .DDS_SYNCCallback=DDS_SYNCCalcSin, .eventCallback=NULL, .appData=NULL}, 
+        {.name="graph", .DDS_SYNCCallback=emulatorDDS_SYNC, .eventCallback=emulatorEvent, .appData=NULL}, 
         //{.name="printLog", .DDS_SYNCCallback=NULL, .eventCallback=eventPrintLog, .appData=NULL}, 
         {.name="",     .DDS_SYNCCallback=NULL,          .eventCallback=NULL,       .appData=NULL}, 
     };
@@ -97,10 +85,10 @@ int main()
         schedulerDDS_SYNC(); // применить установки с прошлого цикла
 
         while(ev_buff.start <= lastDDS_SYNC){
+            if(ev_buff.size == 0)
+                break;
             schedulerEvent(ev_buff.data[ev_buff.start % FIFO_SIZE]);
             ev_buff.start ++;
-            if(ev_buff.size == 0)
-                return 0;
             ev_buff.size --;
         }
         ev_buff.start = ev_buff.start % FIFO_SIZE;

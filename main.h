@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-//#define TEST
+#define TEST
 #define DEBUG
 
 
@@ -24,5 +24,7 @@
 #else
     #define TM_PRINTF(f_, ...) xil_printf((f_), ##__VA_ARGS__)
 #endif
+
+#define DDS_SYNC_PRD 20
 
 #endif // _MAIN_H_

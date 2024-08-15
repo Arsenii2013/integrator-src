@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifndef TEST
 #include "xil_cache.h"
+#endif
 
 logRegs * REGS_BASE_LOG = 0x40000000 + 0x1C00;
 
@@ -63,7 +65,9 @@ size_t writeEntry(logEntry e, void * addr){
             writed++;
         }
     }
+    #ifndef TEST
     Xil_DCacheFlush();
+    #endif
     return writed;
 }
 

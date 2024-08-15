@@ -3,6 +3,7 @@
 #include "logger.h"
 #include "scheduler.h"
 #include "sin_integral_emulator.h"
+#include "AFE.h"
 
 #ifdef TEST
 #include "test_gen.h"

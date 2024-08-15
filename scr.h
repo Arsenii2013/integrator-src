@@ -17,6 +17,10 @@ typedef struct
     uint32_t STOP_EV;
     uint32_t RESET_EV;
     uint32_t CALIBRATION_EV;
+    uint32_t K_ANALOG_TO_B;
+    uint32_t K_DIGITAL_TO_B;
+    uint32_t K_B_TO_ANALOG;
+    uint32_t K_B_SERIES;
 } statusControlRegisters;
 
 #define SR_TIME       0
@@ -53,12 +57,19 @@ void statusLogOverflow();
 
 void controlDDS_SYNC();
 
-uint32_t controlGetB0();
 uint32_t controlB0();
-uint32_t controlSTART();
-uint32_t controlSTOP();
-uint32_t controlRESET();
-uint32_t controlCAL();
+uint32_t controlB0Ev();
+uint32_t controlStartEv();
+uint32_t controlStopEv();
+uint32_t controlResetEv();
+uint32_t controlCalEv();
+
+
+uint32_t controlKoeffAB();
+uint32_t controlKoeffDB();
+uint32_t controlKoeffBA();
+uint32_t controlBSeries();
+
 
 #ifdef TEST
 void initSCR();

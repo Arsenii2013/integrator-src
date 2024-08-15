@@ -34,19 +34,19 @@ int emulatorDDS_SYNC(void*){
 
 
 int emulatorEvent(uint32_t ev, void *){
-    if(ev == controlSTART()){
+    if(ev == controlStartEv()){
         emulRunning = 1;
     }
-    if(ev == controlSTOP()){
+    if(ev == controlStopEv()){
         emulRunning = 0;
     }
-    if(ev == controlRESET()){
+    if(ev == controlResetEv()){
         timestamp = 0;
     }
-    if(ev == controlB0()){
-        timestamp = controlGetB0();
+    if(ev == controlB0Ev()){
+        timestamp = controlB0();
     }
-    if(ev == controlCAL()){
+    if(ev == controlCalEv()){
         calibration = 1;
     }
     return 0;

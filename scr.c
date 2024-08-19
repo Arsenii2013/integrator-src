@@ -5,6 +5,10 @@ statusControlRegisters * REGS_BASE_SCR = 0x40000000 + 0x2000;
 #ifdef TEST
 void initSCR(){
     REGS_BASE_SCR = malloc(sizeof(statusControlRegisters));
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+}
+statusControlRegisters * SCRegPtr(){
+    return REGS_BASE_SCR;
 }
 #endif
 
@@ -141,8 +145,8 @@ uint32_t controlCalEv(){
 uint32_t controlKoeffAB(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     uint32_t K_sens = regs->K_ANALOG_TO_B;
-    float K = 2.5 * DDS_SYNC_PRD * powf(10., -6) / 2.487951 / powf(2., 17) / (float)K_sens;
-    return K;
+    //float K = 2.5 * DDS_SYNC_PRD * powf(10., -6) / 2.487951 / powf(2., 17) / (float)K_sens;
+    return K_sens;
 }
 
 uint32_t controlKoeffDB(){

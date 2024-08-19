@@ -17,6 +17,7 @@ typedef struct
     uint32_t STOP_EV;
     uint32_t RESET_EV;
     uint32_t CALIBRATION_EV;
+    uint32_t MODE;
     uint32_t K_ANALOG_TO_B;
     uint32_t K_DIGITAL_TO_B;
     uint32_t K_B_TO_ANALOG;
@@ -73,6 +74,7 @@ uint32_t controlBSeries();
 
 #ifdef TEST
 void initSCR();
+statusControlRegisters * SCRegPtr();
 #endif
 
 #endif // _SCR_H_

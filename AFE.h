@@ -58,10 +58,14 @@ typedef struct{
 #define MFM_CTRL_BREF_ENA   3
 #define MFM_CTRL_INT_SYNC   4
 
+#define MFM_STAT_CALIBRATION 0
+
 #define CALIBRATION_TIME    1
 
-#define MFM_MODE_ANALOG 0
-#define MFM_MODE_DIGITAL 1
+#define MFM_MODE_ANALOG_TO_ANALOG 0
+#define MFM_MODE_ANALOG_TO_DIGITAL 1
+#define MFM_MODE_DIGITAL_TO_ANALOG 2
+#define MFM_MODE_DIGITAL_TO_DIGITAL 3
 
 void MFMStartIntegral();
 void MFMStopIntegral();
@@ -76,5 +80,8 @@ uint64_t MFMGetIntegral();
 uint64_t MFMGetB();
 
 int AFEDDS_SYNC(void*);
+int AFEEvent(uint32_t event, void*);
+void AFEEmulinit();
+AFERegs * AFERegPtr();
 
 #endif // _AFE_H_

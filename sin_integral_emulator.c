@@ -2,7 +2,7 @@
 #include "scr.h"
 #include "logger.h"
 #include "math.h"
-
+/*
 uint32_t emulRunning = 0;
 uint64_t timestamp = 0;
 uint32_t calibration = 0;
@@ -25,9 +25,9 @@ int emulatorDDS_SYNC(void*){
     float sinus = sin(arg);
     float cosinus = cos(arg); 
 
-    logIntegrator l = {.B=timestamp, .integralDigital=(*(uint32_t *) &sinus), .integralAnalog=(*(uint32_t *) &cosinus)};
+    //logIntegrator l = {.B=timestamp, .integralDigital=(*(uint32_t *) &sinus), .integralAnalog=(*(uint32_t *) &cosinus)};
 
-    logg(*(logEntry *)&l);
+    //logg(*(logEntry *)&l);
     timestamp++;
     return 0;
 }
@@ -50,4 +50,4 @@ int emulatorEvent(uint32_t ev, void *){
         calibration = 1;
     }
     return 0;
-}
+}*/

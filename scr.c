@@ -1,16 +1,17 @@
 #include "scr.h"
 
-statusControlRegisters * REGS_BASE_SCR = 0x40000000 + 0x2000;
+//statusControlRegisters * REGS_BASE_SCR = 0x40000000 + 0x2000;
+statusControlRegisters * REGS_BASE_SCR = 0x3A001000;
 
 #ifdef TEST
 void initSCR(){
     REGS_BASE_SCR = malloc(sizeof(statusControlRegisters));
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
 }
+#endif
 statusControlRegisters * SCRegPtr(){
     return REGS_BASE_SCR;
 }
-#endif
 
 void statusNotEnoughtTime(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
@@ -40,9 +41,11 @@ void statusInvalidEvents(){
 void controlDDS_SYNC(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     if(regs->CR & 0x1){
+        regs->CR &= ~0x1;
         regs->SR = 0;
         regs->AFE_ERR = 0;
         regs->LOG_ERR = 0;
+        regs->HP_ERR = 0;
     }
 }
 
@@ -77,28 +80,28 @@ void statusAFECallibration(){
 
 void statusLogStartStop(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    regs->AFE_ERR |= 1 << LOG_ERR_STARTSTOP;
+    regs->LOG_ERR |= 1 << LOG_ERR_STARTSTOP;
     #ifdef DEBUG
     TM_PRINTF("DEBUG: LOG: start and stop in one DDS_SYNC cycle\n\r");
     #endif
 }
 void statusLogStopStop(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    regs->AFE_ERR |= 1 << LOG_ERR_STOPSTOP;
+    regs->LOG_ERR |= 1 << LOG_ERR_STOPSTOP;
     #ifdef DEBUG
     TM_PRINTF("DEBUG: LOG: try to stop stopped log\n\r");
     #endif
 }
 void statusLogStartStart(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    regs->AFE_ERR |= 1 << LOG_ERR_STARTSTART;
+    regs->LOG_ERR |= 1 << LOG_ERR_STARTSTART;
     #ifdef DEBUG
     TM_PRINTF("DEBUG: LOG: try to start running log\n\r");
     #endif
 }
 void statusLogSwitch(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    regs->AFE_ERR |= 1 << LOG_ERR_SWITCH;
+    regs->LOG_ERR |= 1 << LOG_ERR_SWITCH;
     #ifdef DEBUG
     TM_PRINTF("DEBUG: LOG: try to switch bank while running\n\r");
     #endif
@@ -107,7 +110,7 @@ void statusLogSwitch(){
 
 void statusLogOverflow(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    regs->AFE_ERR |= 1 << LOG_ERR_OVERFLOW;
+    regs->LOG_ERR |= 1 << LOG_ERR_OVERFLOW;
     #ifdef DEBUG
     TM_PRINTF("DEBUG: LOG: bank overflow\n\r");
     #endif
@@ -145,7 +148,7 @@ uint32_t controlCalEv(){
 uint32_t controlKoeffAB(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     uint32_t K_sens = regs->K_ANALOG_TO_B;
-    //float K = 2.5 * DDS_SYNC_PRD * powf(10., -6) / 2.487951 / powf(2., 17) / (float)K_sens;
+    float K = 2.5 * DDS_SYNC_PRD * powf(10., -6) / 2.487951 / powf(2., 17) / (float)K_sens;
     return K_sens;
 }
 

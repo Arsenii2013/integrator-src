@@ -10,7 +10,7 @@ typedef struct
     uint32_t CR_C;
     uint32_t AFE_ERR;
     uint32_t LOG_ERR;
-    uint32_t HP_ERROR;
+    uint32_t HP_ERR;
     uint32_t B0;
     uint32_t B0_EV;
     uint32_t START_EV;

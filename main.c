@@ -6,8 +6,15 @@
 #include "AFE.h"
 #include "AFE_emulator.h"
 
+#include "xtime_l.h"
+#include "xil_mmu.h"
+#include "stop.h"
 #ifdef TEST
 #include "test_gen.h"
+#endif
+
+#ifndef TEST
+#include "xil_cache.h"    
 #endif
 
 int DDS_SYNCPrint(void *){
@@ -36,19 +43,35 @@ int eventApp(uint32_t ev, void*){
 
 int DDS_SYNCApp(void*){
     if(appRunning){
-        uint64_t B = MFMGetB();
-        uint64_t intergral = MFMGetIntegral();
-        logIntegrator e = {.B_low = B, .B_high = B >> 32, .integralAnalog_low = intergral, .integralAnalog_high = intergral >> 32};
-        TM_PRINTF("%x, %x, %x, %x\n\r", e.B_low, e.B_high, e.integralAnalog_low, e.integralAnalog_high);
+        int64_t B = MFMGetB();
+        int64_t intergral = MFMGetIntegral();
+        logIntegrator e = {.B_low = *(uint32_t*) &B, .B_high = ((*(uint64_t*) &B) >> 32), .integralAnalog_low = intergral, .integralAnalog_high = intergral >> 32};
+        //TM_PRINTF("%x, %x, %x, %x\n\r", e.B_low, e.B_high, e.integralAnalog_low, e.integralAnalog_high);
         logg(*(logEntry *) &e);
     }
     return 0;
 }
 
+#ifndef TEST
+int DDS_SYNCCacheInvalidate(void*){
+    //Xil_DCacheFlush();
+    Xil_DCacheInvalidateRange(loggerRegPtr(), sizeof(logRegs));
+    Xil_DCacheInvalidateRange(SCRegPtr(), sizeof(statusControlRegisters));
+    return 0;
+}
+
+int DDS_SYNCCacheFlush(void*){
+    //Xil_DCacheFlush();
+    Xil_DCacheFlushRange(loggerRegPtr(), sizeof(logRegs));
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
+    return 0;
+}
+#endif
+
 #ifdef TEST
 void PCIELoggerSetup(){
     logRegs * regLog = loggerRegPtr();
-    regLog->CFG  = 0x3c;
+    regLog->CFG  = 0x6;
     regLog->DCM  = 0;
     regLog->START[0] = 0x12;
     regLog->STOP[0] = 0x18;
@@ -80,11 +103,9 @@ int main()
     #else
     init_platform();
     initPStoPL();
-    clearEvents();
-
-    #ifdef DEBUG
+    initSCR();
     TM_PRINTF("start\n\r");
-
+    #ifdef DEBUG
     volatile uint32_t tmp = readEvent();
     TM_PRINTF("%d\n\r", tmp);
     #endif
@@ -94,14 +115,22 @@ int main()
     loggerInit();
 
     schedulerRecord apps[] = {
+        #ifdef DEBUG
         {.name="print", .DDS_SYNCCallback=DDS_SYNCPrint, .eventCallback=eventPrint, .appData=NULL}, 
-        //{.name="return", .DDS_SYNCCallback=DDS_SYNCReturn, .eventCallback=eventReturn, .appData=NULL}, 
-        //{.name="data", .DDS_SYNCCallback=DDS_SYNCAppData, .eventCallback=eventAppData, .appData=&lev}, 
+        #endif
+        #ifndef TEST
+        {.name="cacheInv", .DDS_SYNCCallback=DDS_SYNCCacheInvalidate, .eventCallback=NULL, .appData=NULL}, 
+        #endif
+        {.name="control", .DDS_SYNCCallback=controlDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
+        
         {.name="logger", .DDS_SYNCCallback=loggerDDS_SYNC, .eventCallback=loggerEvent, .appData=NULL}, 
         {.name="AFEEmul", .DDS_SYNCCallback=AFEEmulDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
         {.name="log", .DDS_SYNCCallback=DDS_SYNCApp, .eventCallback=eventApp, .appData=NULL}, 
         {.name="AFE", .DDS_SYNCCallback=AFEDDS_SYNC, .eventCallback=AFEEvent, .appData=NULL}, 
-        //{.name="printLog", .DDS_SYNCCallback=NULL, .eventCallback=eventPrintLog, .appData=NULL}, 
+        #ifndef TEST
+        {.name="stop", .DDS_SYNCCallback=stopDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
+        {.name="cacheFlush", .DDS_SYNCCallback=DDS_SYNCCacheFlush, .eventCallback=NULL, .appData=NULL}, 
+        #endif
         {.name="",     .DDS_SYNCCallback=NULL,          .eventCallback=NULL,       .appData=NULL}, 
     };
 
@@ -111,6 +140,16 @@ int main()
     PCIELoggerSetup();
     #endif
     uint32_t flag = 1;
+    #ifndef TEST
+    clearEvents();
+    #endif
+    uint32_t time_eval;
+    XTime before_test;
+    XTime *p_before_test = &before_test;
+    XTime after_test;
+    XTime *p_after_test = &after_test;
+
+    DDS_SYNCCacheInvalidate(NULL);
     while (flag) {
         #ifdef TEST
         testWaitDDS_SYNC();
@@ -119,12 +158,13 @@ int main()
         waitDDS_SYNC(0);
         readEvents(&ev_buff);
         #endif
+        XTime_GetTime(p_before_test);
 
         uint32_t lastDDS_SYNC = findLastDDS_SYNC(&ev_buff);
         clearDDS_SYNC(&ev_buff);
 
         schedulerDDS_SYNC(); // применить установки с прошлого цикла
-
+        
         while(ev_buff.start <= lastDDS_SYNC){
             if(ev_buff.size == 0)
                 break;
@@ -137,20 +177,15 @@ int main()
         }
         ev_buff.start = ev_buff.start % FIFO_SIZE;
 
-        //logIntegrator entry = {.integralDigital=ev, .integralAnalog=ev, .B=ev};
-        //if(ev && logRunning())
-           //logg(*((logEntry*)&entry));
-        //TM_PRINTF("0x%x\n", ev);
+        XTime_GetTime(p_after_test);
+        time_eval = (u64) after_test - (u64) before_test;
+        DDS_SYNCCacheFlush(NULL);
+        //TM_PRINTF("%lu\n\r",time_eval);
     }
     printLog();
     
     #ifndef TEST
     cleanup_platform();
-
-    #ifdef DEBUG
-    TM_PRINTF("start\n\r");
-    #endif
     #endif
     return 0;
 }
-

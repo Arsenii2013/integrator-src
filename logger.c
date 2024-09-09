@@ -8,10 +8,14 @@
 #endif
 
 //logRegs * REGS_BASE_LOG = 0x40000000 + 0x1C00;
-logRegs * REGS_BASE_LOG = 0x3A000000;
+volatile logRegs * REGS_BASE_LOG = (logRegs *)0x3A000000;
 
-void * bankAddrs [BANK_NUM] = {0x00000000, 0x10000000};
+uint8_t * bankAddrs [BANK_NUM] = {(uint8_t *)0x00000000, (uint8_t *)0x10000000};
 uint32_t bankCnt [BANK_NUM] = {0, 0};
+
+uint32_t startLog = 0;
+uint32_t stopLog = 0;
+uint32_t switchLog = 0;
 
 uint32_t logEntrySize(uint32_t desc){
     uint32_t count = 0;
@@ -20,7 +24,7 @@ uint32_t logEntrySize(uint32_t desc){
     return count;
 }
 
-logRegs * loggerRegPtr(){
+volatile logRegs * loggerRegPtr(){
     return REGS_BASE_LOG;
 }
 
@@ -40,14 +44,12 @@ void loggerInit(){
     REGS_BASE_LOG    = malloc(sizeof(logRegs));
     #endif
 
-    const logRegs defaults = {.SR = 1 << SR_IDLE, .CR = 0, .CR_S = 0, .CR_C = 0, .CFG = 0, .DCM = 0, .START = {0, 0}, .STOP = {0, 0},
-         .bankRegs = {
-            {.cfg = 0, .dcm = 0, .size = 0}, 
-            {.cfg = 0, .dcm = 0, .size = 0}
-        }
+    const logRegs defaults = {.SR = 1 << SR_IDLE, .CR = 0, .CR_S = 0, .CR_C = 0, .CFG = 7, .DCM = 0, .START = {15, 0}, .STOP = {0, 0},
+         .bankRegs[0] = {.cfg = 0, .dcm = 0, .size = 0}, .bankRegs[1] = {.cfg = 0, .dcm = 0, .size = 0},
     };
 
     *REGS_BASE_LOG = defaults;
+    Xil_DCacheFlushRange(loggerRegPtr(), sizeof(logRegs));
 }
 
 size_t writeEntry(logEntry e, void * addr){
@@ -63,9 +65,7 @@ size_t writeEntry(logEntry e, void * addr){
             writed++;
         }
     }
-    #ifndef TEST
-    Xil_DCacheFlush();
-    #endif
+    Xil_DCacheFlushRange(addr, writed*4);
     return writed;
 }
 
@@ -112,9 +112,9 @@ int loggerDDS_SYNC(void*){
     regs->CR_S = 0;
     regs->CR_C = 0;
 
-    uint32_t CRStart  = regs->CR & (1 << CR_START );
-    uint32_t CRStop   = regs->CR & (1 << CR_STOP  );
-    uint32_t CRSwitch = regs->CR & (1 << CR_SWITCH);
+    uint32_t CRStart  = (regs->CR & (1 << CR_START )) | startLog;
+    uint32_t CRStop   = (regs->CR & (1 << CR_STOP  )) | stopLog;
+    uint32_t CRSwitch = (regs->CR & (1 << CR_SWITCH)) | switchLog;
 
     uint32_t running = !(regs->SR & (1 << SR_IDLE)); 
 
@@ -150,7 +150,9 @@ int loggerDDS_SYNC(void*){
 
 
     regs->CR   &= ~((1 << CR_START) | (1 << CR_STOP) | (1 << CR_SWITCH));
-
+    startLog = 0;
+    stopLog  = 0;
+    switchLog= 0; 
     return 0;
 }
 
@@ -164,16 +166,19 @@ int loggerEvent(uint32_t ev, void*){
     if(running){
         for(int i = 0; i < BANK_NUM; i ++){
             if(ev == regs->STOP[i]){
-                regs->CR |= 1 << CR_STOP;
+                //regs->CR |= 1 << CR_STOP;
+                stopLog = 1; 
                 if((regs->CR >> CR_MODE) & 0b01){
-                    regs->CR |= 1 << CR_SWITCH;
+                    //regs->CR |= 1 << CR_SWITCH;
+                    switchLog = 1;
                 }
             }
         }
     }else{
         for(int i = 0; i < BANK_NUM; i ++){
             if(ev == regs->START[i]){
-                regs->CR |= 1 << CR_START;
+                //regs->CR |= 1 << CR_START;
+                startLog = 1;
             }
         }
     }

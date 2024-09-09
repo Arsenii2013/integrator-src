@@ -7,8 +7,8 @@
 #include <math.h>
 
 //#define TEST
-#define DEBUG
-
+//#define DEBUG
+//#define PROFILING
 
 #ifndef TEST
     #include "platform.h"
@@ -24,5 +24,7 @@
 #else
     #define TM_PRINTF(f_, ...) xil_printf((f_), ##__VA_ARGS__)
 #endif
+
+#define DDS_SYNC_PRD 20
 
 #endif // _MAIN_H_

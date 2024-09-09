@@ -3,9 +3,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifndef TEST
 #include "xil_cache.h"
+#endif
 
-logRegs * REGS_BASE_LOG = 0x40000000 + 0x1C00;
+//logRegs * REGS_BASE_LOG = 0x40000000 + 0x1C00;
+logRegs * REGS_BASE_LOG = 0x3A000000;
 
 void * bankAddrs [BANK_NUM] = {0x00000000, 0x10000000};
 uint32_t bankCnt [BANK_NUM] = {0, 0};
@@ -37,17 +40,14 @@ void loggerInit(){
     REGS_BASE_LOG    = malloc(sizeof(logRegs));
     #endif
 
-    /*const logRegs defaults = {.SR = 1, .CR = 0, .CR_S = 0, .CR_C = 0, .CFG = 0, .DCM = 0, .START = {0, 0}, .STOP = {0, 0},
+    const logRegs defaults = {.SR = 1 << SR_IDLE, .CR = 0, .CR_S = 0, .CR_C = 0, .CFG = 0, .DCM = 0, .START = {0, 0}, .STOP = {0, 0},
          .bankRegs = {
             {.cfg = 0, .dcm = 0, .size = 0}, 
             {.cfg = 0, .dcm = 0, .size = 0}
         }
-    };*/
+    };
 
-    REGS_BASE_LOG->SR = 1 << SR_IDLE;
-    REGS_BASE_LOG->CR = 0;
-    REGS_BASE_LOG->CR_C = 0;
-    REGS_BASE_LOG->CR_S = 0;
+    *REGS_BASE_LOG = defaults;
 }
 
 size_t writeEntry(logEntry e, void * addr){
@@ -63,8 +63,21 @@ size_t writeEntry(logEntry e, void * addr){
             writed++;
         }
     }
+    #ifndef TEST
     Xil_DCacheFlush();
+    #endif
     return writed;
+}
+
+uint32_t integratorCfgConvert(uint32_t cfg){
+    uint32_t res = 0;
+    for(int i = 0; i < 3; i++){
+        if(cfg & (1 << i)){
+            res |= 3 << (2*i);
+        }
+    }
+    res |= (cfg >> 3) & 0x3f;
+    return res;
 }
 
 void logg(logEntry e){
@@ -82,8 +95,8 @@ void logg(logEntry e){
             statusLogOverflow();
             return;
         }
-        e.desc = regs->bankRegs[activeBank].cfg;
-        writeEntry(e, bankAddrs[activeBank] + regs->bankRegs[activeBank].size * logEntrySize(regs->bankRegs[activeBank].cfg) * 4);
+        e.desc = integratorCfgConvert(regs->bankRegs[activeBank].cfg);
+        writeEntry(e, bankAddrs[activeBank] + regs->bankRegs[activeBank].size * logEntrySize(e.desc) * 4);
         regs->bankRegs[activeBank].size ++;
         bankCnt[activeBank] = regs->bankRegs[activeBank].dcm;
     } else {
@@ -112,6 +125,7 @@ int loggerDDS_SYNC(void*){
 
     if(running){
         if(CRStop){
+            TM_PRINTF("CRStop\n\r");
             regs->SR |= (1 << SR_IDLE);
             if(CRSwitch){
                 regs->SR   ^= (1 << SR_BANK);
@@ -122,6 +136,7 @@ int loggerDDS_SYNC(void*){
         }
     }else{
         if(CRStart){
+            TM_PRINTF("CRStart\n\r");
             regs->SR &= ~(1 << SR_IDLE);
             uint8_t activeBank = regs->SR & (1 << SR_BANK) ? 1 : 0;
             regs->bankRegs[activeBank].dcm = regs->DCM;
@@ -141,11 +156,14 @@ int loggerDDS_SYNC(void*){
 
 int loggerEvent(uint32_t ev, void*){
     logRegs* regs = (logRegs*) REGS_BASE_LOG;
+    if(ev == 0){
+        return 0;
+    }
     uint32_t running = !(regs->SR & (1 << SR_IDLE)); 
 
     if(running){
         for(int i = 0; i < BANK_NUM; i ++){
-            if(ev == regs->STOP[i] && ev != 0){
+            if(ev == regs->STOP[i]){
                 regs->CR |= 1 << CR_STOP;
                 if((regs->CR >> CR_MODE) & 0b01){
                     regs->CR |= 1 << CR_SWITCH;
@@ -154,7 +172,7 @@ int loggerEvent(uint32_t ev, void*){
         }
     }else{
         for(int i = 0; i < BANK_NUM; i ++){
-            if(ev == regs->START[i] && ev != 0){
+            if(ev == regs->START[i]){
                 regs->CR |= 1 << CR_START;
             }
         }
@@ -166,15 +184,29 @@ int loggerEvent(uint32_t ev, void*){
 void printLog(){
     logRegs* regs = (logRegs*) REGS_BASE_LOG;
     uint32_t * log0 = bankAddrs[0], * log1 = bankAddrs[1];
-    uint32_t desc0 = regs->bankRegs[0].cfg, desc1 = regs->bankRegs[1].cfg;
+    uint32_t desc0 = integratorCfgConvert(regs->bankRegs[0].cfg), desc1 = integratorCfgConvert(regs->bankRegs[1].cfg);
     uint32_t esize0 = logEntrySize(desc0), esize1 = logEntrySize(desc1);
     size_t size0 = regs->bankRegs[0].size * esize0, size1 = regs->bankRegs[1].size * esize1;
 
     TM_PRINTF("log0\n\r");
     for(size_t i = 0; i < size0; i ++){
-        uint32_t data = log0[i];
-        TM_PRINTF("%lu\t", data);
+        if(i%2 == 0){
+            uint32_t data = log0[i];
+            TM_PRINTF("%lu\t", data);
+        }else {
+            int32_t data = ((int32_t *)log0)[i];
+            TM_PRINTF("%d\t", data);
+        }
         if(i%esize0 == esize0-1){
+            TM_PRINTF("\n\r");
+        }
+    }
+
+    TM_PRINTF("log0x64\n\r");
+    for(size_t i = 0; i < size0 / 2; i ++){
+        int64_t data = ((int64_t *)log0)[i];
+        TM_PRINTF("%lld\t", data);
+        if(i%(esize0/2) == (esize0/2)-1){
             TM_PRINTF("\n\r");
         }
     }

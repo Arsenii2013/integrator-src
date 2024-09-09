@@ -22,11 +22,10 @@ void initPStoPL(){
     XGpioPs_Config *conf2 = XGpioPs_LookupConfig(XPAR_PS7_GPIO_0_DEVICE_ID);
     XGpioPs_CfgInitialize(&bank2, conf2, conf2->BaseAddr);
 
-    XGpioPs_SetDirectionPin(&bank2, EMIO_0_PIN, 0x0);
     XGpioPs_SetDirection(&bank2, XGPIOPS_BANK2, 0xffffffff);
     XGpioPs_SetOutputEnable(&bank2, XGPIOPS_BANK2, 0xffffffff);
 
-    XGpioPs_Write(&bank2, XGPIOPS_BANK2, 0x00FF0000);
+    XGpioPs_Write(&bank2, XGPIOPS_BANK2, 0x00000000);
     #endif
 }
 
@@ -82,7 +81,7 @@ uint32_t findLastDDS_SYNC(cyclicBuffer * buff){
         return 0xffff;
     }
     #endif
-    return last % FIFO_SIZE;
+    return last;
 }
 
 void clearDDS_SYNC(cyclicBuffer * buff){

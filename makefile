@@ -32,6 +32,6 @@ pre-build:
 	-@echo ' '
 
 test:
-	gcc -ggdb logger.c test_gen.c scheduler.c test.c 
+	gcc -lm -ggdb logger.c test_gen.c scheduler.c sin_integral_emulator.c main.c scr.c PSPL.c
 
 .PHONY: all clean dependents main-build pre-build

@@ -81,7 +81,7 @@ uint32_t findLastDDS_SYNC(cyclicBuffer * buff){
         return 0xffff;
     }
     #endif
-    return last % FIFO_SIZE;
+    return last;
 }
 
 void clearDDS_SYNC(cyclicBuffer * buff){

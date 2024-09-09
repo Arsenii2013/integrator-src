@@ -1,14 +1,14 @@
 #include "AFE.h"
 
 //volatile AFERegs * REGS_BASE_AFE = 0x40000000 + 0x1800;
-volatile AFERegs * REGS_BASE_AFE = 0x10000000;
+volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x10000000;
 uint32_t reset = 0;
 uint32_t calibration_cnt = 0;
 uint32_t koeffAB = 0;
 uint32_t koeffDB = 0;
 uint32_t mode = MFM_MODE_ANALOG_TO_ANALOG;
 
-AFERegs * AFERegPtr(){
+volatile AFERegs * AFERegPtr(){
     return  REGS_BASE_AFE;
 }
 

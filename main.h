@@ -6,9 +6,9 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define TEST
-#define DEBUG
-
+//#define TEST
+//#define DEBUG
+//#define PROFILING
 
 #ifndef TEST
     #include "platform.h"

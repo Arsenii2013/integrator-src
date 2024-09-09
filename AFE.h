@@ -82,6 +82,6 @@ uint64_t MFMGetB();
 int AFEDDS_SYNC(void*);
 int AFEEvent(uint32_t event, void*);
 void AFEEmulinit();
-AFERegs * AFERegPtr();
+volatile AFERegs * AFERegPtr();
 
 #endif // _AFE_H_

@@ -72,9 +72,7 @@ uint32_t controlKoeffBA();
 uint32_t controlBSeries();
 
 
-#ifdef TEST
 void initSCR();
-statusControlRegisters * SCRegPtr();
-#endif
+volatile statusControlRegisters * SCRegPtr();
 
 #endif // _SCR_H_

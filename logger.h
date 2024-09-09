@@ -70,7 +70,7 @@ typedef struct
     uint32_t B_high;
 } logIntegrator;
 
-logRegs * loggerRegPtr();
+volatile logRegs * loggerRegPtr();
 void loggerInit();
 uint32_t logRunning();
 

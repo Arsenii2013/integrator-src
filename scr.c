@@ -1,21 +1,42 @@
 #include "scr.h"
 
 //statusControlRegisters * REGS_BASE_SCR = 0x40000000 + 0x2000;
-statusControlRegisters * REGS_BASE_SCR = 0x3A001000;
+volatile statusControlRegisters * REGS_BASE_SCR = (statusControlRegisters *)0x3A001000;
 
-#ifdef TEST
 void initSCR(){
-    REGS_BASE_SCR = malloc(sizeof(statusControlRegisters));
-    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    #ifdef TEST
+        REGS_BASE_SCR = malloc(sizeof(statusControlRegisters));
+        statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    #endif
+    REGS_BASE_SCR->SR = 0;
+    REGS_BASE_SCR->CR = 0;
+    REGS_BASE_SCR->CR_S = 0;
+    REGS_BASE_SCR->CR_C = 0;
+    REGS_BASE_SCR->AFE_ERR = 0;
+    REGS_BASE_SCR->LOG_ERR = 0;
+    REGS_BASE_SCR->HP_ERR = 0;
+    REGS_BASE_SCR->B0 = 0;
+    REGS_BASE_SCR->B0_EV = 0;
+    REGS_BASE_SCR->START_EV = 0;
+    REGS_BASE_SCR->STOP_EV = 0;
+    REGS_BASE_SCR->RESET_EV = 0;
+    REGS_BASE_SCR->CALIBRATION_EV = 0;
+    REGS_BASE_SCR->MODE = 0;
+    REGS_BASE_SCR->K_ANALOG_TO_B = 0;
+    REGS_BASE_SCR->K_DIGITAL_TO_B = 0;
+    REGS_BASE_SCR->K_B_TO_ANALOG = 0;
+    REGS_BASE_SCR->K_B_SERIES = 0;
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
 }
-#endif
-statusControlRegisters * SCRegPtr(){
+
+volatile statusControlRegisters * SCRegPtr(){
     return REGS_BASE_SCR;
 }
 
 void statusNotEnoughtTime(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->SR |= 1 << SR_TIME;
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
     #ifdef DEBUG
     TM_PRINTF("DEBUG: events were not processed in one DDS_SYNC cycle\n\r");
     #endif
@@ -24,6 +45,7 @@ void statusNotEnoughtTime(){
 void statusOverflowEvents(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->SR |= 1 << SR_OVERFLOW;
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
     #ifdef DEBUG
     TM_PRINTF("DEBUG: event fifo overflow\n\r");
     #endif
@@ -32,6 +54,7 @@ void statusOverflowEvents(){
 void statusInvalidEvents(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->SR |= 1 << SR_INVALID;
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
     #ifdef DEBUG
     TM_PRINTF("DEBUG: invalid events sequnce\n\r");
     #endif
@@ -52,6 +75,7 @@ void controlDDS_SYNC(){
 void statusAFEStartStop(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR |= 1 << AFE_ERR_STARTSTOP;
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
     #ifdef DEBUG
     TM_PRINTF("DEBUG: AFE: start and stop in one DDS_SYNC cycle\n\r");
     #endif
@@ -59,6 +83,7 @@ void statusAFEStartStop(){
 void statusAFEStopStop(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR |= 1 << AFE_ERR_STOPSTOP;
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
     #ifdef DEBUG
     TM_PRINTF("DEBUG: AFE: try to stop stopped integral\n\r");
     #endif
@@ -66,6 +91,7 @@ void statusAFEStopStop(){
 void statusAFEStartStart(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR |= 1 << AFE_ERR_STARTSTART;
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
     #ifdef DEBUG
     TM_PRINTF("DEBUG: AFE: try to start running integral\n\r");
     #endif
@@ -73,6 +99,7 @@ void statusAFEStartStart(){
 void statusAFECallibration(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR |= 1 << AFE_ERR_CALIBRATION;
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
     #ifdef DEBUG
     TM_PRINTF("DEBUG: AFE: try to handle while callibration\n\r");
     #endif
@@ -81,6 +108,7 @@ void statusAFECallibration(){
 void statusLogStartStop(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_STARTSTOP;
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
     #ifdef DEBUG
     TM_PRINTF("DEBUG: LOG: start and stop in one DDS_SYNC cycle\n\r");
     #endif
@@ -88,6 +116,7 @@ void statusLogStartStop(){
 void statusLogStopStop(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_STOPSTOP;
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
     #ifdef DEBUG
     TM_PRINTF("DEBUG: LOG: try to stop stopped log\n\r");
     #endif
@@ -95,6 +124,7 @@ void statusLogStopStop(){
 void statusLogStartStart(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_STARTSTART;
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
     #ifdef DEBUG
     TM_PRINTF("DEBUG: LOG: try to start running log\n\r");
     #endif
@@ -102,6 +132,7 @@ void statusLogStartStart(){
 void statusLogSwitch(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_SWITCH;
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
     #ifdef DEBUG
     TM_PRINTF("DEBUG: LOG: try to switch bank while running\n\r");
     #endif
@@ -111,6 +142,7 @@ void statusLogSwitch(){
 void statusLogOverflow(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_OVERFLOW;
+    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
     #ifdef DEBUG
     TM_PRINTF("DEBUG: LOG: bank overflow\n\r");
     #endif

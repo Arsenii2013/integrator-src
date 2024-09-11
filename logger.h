@@ -62,12 +62,11 @@ typedef struct
 typedef struct
 {
     uint32_t desc;
-    uint32_t integralDigital_low;
-    uint32_t integralDigital_high;
-    uint32_t integralAnalog_low;
-    uint32_t integralAnalog_high;
-    uint32_t B_low;
-    uint32_t B_high;
+    uint32_t integral_low;
+    uint32_t integral_high;
+    uint32_t ADC;
+    uint32_t DAC;
+    uint32_t B;
 } logIntegrator;
 
 volatile logRegs * loggerRegPtr();

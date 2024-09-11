@@ -113,21 +113,28 @@ uint64_t MFMGetIntegral(){
     } else if(mode == MFM_MODE_DIGITAL_TO_ANALOG || mode == MFM_MODE_DIGITAL_TO_DIGITAL){
         intH = regs->MFM.mf_dig_i_hi;
         intL = regs->MFM.mf_dig_i_low;
-    } else {
-        intH = 0xffffffff;
-        intL = 0xffffffff;
     }
 
     return (intH << 32) | intL;
 }
 
-uint64_t MFMGetB(){
+float MFMGetB(){
     if(mode == MFM_MODE_ANALOG_TO_ANALOG || mode == MFM_MODE_ANALOG_TO_DIGITAL){
         return koeffAB * MFMGetIntegral();
     } else if(mode == MFM_MODE_DIGITAL_TO_ANALOG || mode == MFM_MODE_DIGITAL_TO_DIGITAL){
         return koeffDB * MFMGetIntegral();
     }
-    return 0xffffffffffffffff;
+    return 0.f;
+}
+
+uint32_t MFMGetADC(){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    return regs->MFM.last_cal_adc_data;
+}
+
+uint32_t MFMGetDAC(){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    return 0;
 }
 
 void AFEEmulinit(){

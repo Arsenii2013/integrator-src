@@ -76,10 +76,10 @@ void MFMSetATOA(uint32_t coeff);
 void MFMSetATOD(uint32_t coeff);
 void MFMSetDTOA(uint32_t coeff);
 void MFMSetMode(int new_mode);
-uint64_t MFMGetIntegral();
+int64_t MFMGetIntegral();
 float MFMGetB();
-uint32_t MFMGetADC();
-uint32_t MFMGetDAC();
+int32_t MFMGetADC();
+int32_t MFMGetDAC();
 
 int AFEDDS_SYNC(void*);
 int AFEEvent(uint32_t event, void*);

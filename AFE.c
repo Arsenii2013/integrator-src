@@ -103,7 +103,7 @@ void MFMSetMode(int new_mode){
     mode = new_mode;
 }
 
-uint64_t MFMGetIntegral(){
+int64_t MFMGetIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     uint64_t intH = 0;
     uint32_t intL = 0;
@@ -115,25 +115,26 @@ uint64_t MFMGetIntegral(){
         intH = regs->MFM.mf_dig_i_hi;
         intL = regs->MFM.mf_dig_i_low;
     }
+    uint64_t res = (intH << 32) | intL;
 
-    return (intH << 32) | intL;
+    return *(int64_t*)&res;
 }
 
 float MFMGetB(){
     if(mode == MFM_MODE_ANALOG_TO_ANALOG || mode == MFM_MODE_ANALOG_TO_DIGITAL){
-        return koeffAB * MFMGetIntegral();
+        return (float)koeffAB * (float)((double)MFMGetIntegral());
     } else if(mode == MFM_MODE_DIGITAL_TO_ANALOG || mode == MFM_MODE_DIGITAL_TO_DIGITAL){
-        return koeffDB * MFMGetIntegral();
+        return (float)koeffDB * (float)((double)MFMGetIntegral();
     }
     return 0.f;
 }
 
-uint32_t MFMGetADC(){
+int32_t MFMGetADC(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     return regs->MFM.last_cal_adc_data;
 }
 
-uint32_t MFMGetDAC(){
+int32_t MFMGetDAC(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     return 0;
 }

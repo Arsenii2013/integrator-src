@@ -198,3 +198,9 @@ uint32_t controlBSeries(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     return regs->K_B_SERIES;
 }
+
+
+uint32_t controlMode(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->MODE;
+}

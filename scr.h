@@ -71,6 +71,7 @@ uint32_t controlKoeffDB();
 uint32_t controlKoeffBA();
 uint32_t controlBSeries();
 
+uint32_t controlMode();
 
 void initSCR();
 volatile statusControlRegisters * SCRegPtr();

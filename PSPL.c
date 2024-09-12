@@ -4,6 +4,7 @@
 #define EMIO_0_PIN      54
 #define DDS_SYNC_PIN    EMIO_0_PIN
 #define BUSY_PIN        EMIO_0_PIN + 1
+#define AFE_PWR_PIN     EMIO_0_PIN + 2
 #define GP0_START       0x40000000
 
 #define CR              0x1
@@ -26,6 +27,14 @@ void initPStoPL(){
     XGpioPs_SetOutputEnable(&bank2, XGPIOPS_BANK2, 0xffffffff);
 
     XGpioPs_Write(&bank2, XGPIOPS_BANK2, 0x00000000);
+    #endif
+}
+
+int AFEInit(){
+    #ifndef TEST
+    XGpioPs_SetOutputEnablePin(&bank2, AFE_PWR_PIN, 1);
+    for(int i = 0; i < 10000; i ++){};
+    return XGpioPs_ReadPin(&bank2, AFE_PWR_PIN);
     #endif
 }
 

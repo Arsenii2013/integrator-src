@@ -1,7 +1,7 @@
 #include "AFE.h"
 
-//volatile AFERegs * REGS_BASE_AFE = 0x40000000 + 0x1800;
-volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x10000000;
+volatile AFERegs * REGS_BASE_AFE = 0x40000000 + 0x1800;
+//volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x10000000;
 uint32_t reset = 0;
 uint32_t calibration_cnt = 0;
 uint32_t koeffAB = 0;
@@ -70,6 +70,7 @@ int AFEDDS_SYNC(void*){
 
     koeffAB = controlKoeffAB();
     koeffDB = controlKoeffDB();
+    mode    = controlMode();
     return 0;
 }
 
@@ -102,7 +103,7 @@ void MFMSetMode(int new_mode){
     mode = new_mode;
 }
 
-uint64_t MFMGetIntegral(){
+int64_t MFMGetIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     uint64_t intH = 0;
     uint32_t intL = 0;
@@ -113,21 +114,29 @@ uint64_t MFMGetIntegral(){
     } else if(mode == MFM_MODE_DIGITAL_TO_ANALOG || mode == MFM_MODE_DIGITAL_TO_DIGITAL){
         intH = regs->MFM.mf_dig_i_hi;
         intL = regs->MFM.mf_dig_i_low;
-    } else {
-        intH = 0xffffffff;
-        intL = 0xffffffff;
     }
+    uint64_t res = (intH << 32) | intL;
 
-    return (intH << 32) | intL;
+    return *(int64_t*)&res;
 }
 
-uint64_t MFMGetB(){
+float MFMGetB(){
     if(mode == MFM_MODE_ANALOG_TO_ANALOG || mode == MFM_MODE_ANALOG_TO_DIGITAL){
-        return koeffAB * MFMGetIntegral();
+        return (float)koeffAB * (float)((double)MFMGetIntegral());
     } else if(mode == MFM_MODE_DIGITAL_TO_ANALOG || mode == MFM_MODE_DIGITAL_TO_DIGITAL){
-        return koeffDB * MFMGetIntegral();
+        return (float)koeffDB * (float)((double)MFMGetIntegral();
     }
-    return 0xffffffffffffffff;
+    return 0.f;
+}
+
+int32_t MFMGetADC(){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    return regs->MFM.last_cal_adc_data;
+}
+
+int32_t MFMGetDAC(){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    return 0;
 }
 
 void AFEEmulinit(){

@@ -70,13 +70,20 @@ size_t writeEntry(logEntry e, void * addr){
 }
 
 uint32_t integratorCfgConvert(uint32_t cfg){
+    uint32_t bits = 0b0001; // показывает битность каждого параметра
     uint32_t res = 0;
-    for(int i = 0; i < 3; i++){
-        if(cfg & (1 << i)){
-            res |= 3 << (2*i);
+    for(int i = 0, j = 0; (i < 32) && (j < 32); i++){
+        if(cfg & 1 << i) {
+            res |= 1 << j;
+        }
+        j ++;
+        if(bits & 1 << i){ // 64
+            if(cfg & 1 << i) {
+                res |= 1 << j;
+            }
+            j ++;
         }
     }
-    res |= (cfg >> 3) & 0x3f;
     return res;
 }
 

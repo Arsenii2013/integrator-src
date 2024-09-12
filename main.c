@@ -6,8 +6,6 @@
 #include "AFE.h"
 #include "AFE_emulator.h"
 
-#include "xtime_l.h"
-#include "xil_mmu.h"
 #include "stop.h"
 #ifdef TEST
 #include "test_gen.h"
@@ -43,10 +41,12 @@ int eventApp(uint32_t ev, void*){
 
 int DDS_SYNCApp(void*){
     if(appRunning){
-        int64_t B = MFMGetB();
+        float B = MFMGetB();
         int64_t intergral = MFMGetIntegral();
-        logIntegrator e = {.B_low = *(uint32_t*) &B, .B_high = ((*(uint64_t*) &B) >> 32), .integralAnalog_low = intergral, .integralAnalog_high = intergral >> 32};
-        //TM_PRINTF("%x, %x, %x, %x\n\r", e.B_low, e.B_high, e.integralAnalog_low, e.integralAnalog_high);
+        int32_t ADC = MFMGetADC();
+
+        logIntegrator e = {.B = *(uint32_t *)&B, .ADC = ADC, .integral_low = intergral, .integral_high = intergral >> 32};
+        //TM_PRINTF("%x, %x, %x, %x\n\r", e.B, e.ADC, e.integral_low, e.integral_high);
         logg(*(logEntry *) &e);
     }
     return 0;
@@ -84,8 +84,6 @@ void PCIELoggerSetup(){
     regSC->K_B_TO_ANALOG = 1;
     regSC->MODE = MFM_MODE_ANALOG_TO_ANALOG;
 }
-
-
 #endif
 
 int main()
@@ -105,6 +103,8 @@ int main()
     initPStoPL();
     initSCR();
     TM_PRINTF("start\n\r");
+    int afeRes = AFEInit();
+    TM_PRINTF("AFE pwr good: %d\n\r", afeRes);
     #ifdef DEBUG
     volatile uint32_t tmp = readEvent();
     TM_PRINTF("%d\n\r", tmp);
@@ -124,7 +124,7 @@ int main()
         {.name="control", .DDS_SYNCCallback=controlDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
         
         {.name="logger", .DDS_SYNCCallback=loggerDDS_SYNC, .eventCallback=loggerEvent, .appData=NULL}, 
-        {.name="AFEEmul", .DDS_SYNCCallback=AFEEmulDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
+        //{.name="AFEEmul", .DDS_SYNCCallback=AFEEmulDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
         {.name="log", .DDS_SYNCCallback=DDS_SYNCApp, .eventCallback=eventApp, .appData=NULL}, 
         {.name="AFE", .DDS_SYNCCallback=AFEDDS_SYNC, .eventCallback=AFEEvent, .appData=NULL}, 
         #ifndef TEST
@@ -143,11 +143,6 @@ int main()
     #ifndef TEST
     clearEvents();
     #endif
-    uint32_t time_eval;
-    XTime before_test;
-    XTime *p_before_test = &before_test;
-    XTime after_test;
-    XTime *p_after_test = &after_test;
 
     DDS_SYNCCacheInvalidate(NULL);
     while (flag) {
@@ -158,7 +153,6 @@ int main()
         waitDDS_SYNC(0);
         readEvents(&ev_buff);
         #endif
-        XTime_GetTime(p_before_test);
 
         uint32_t lastDDS_SYNC = findLastDDS_SYNC(&ev_buff);
         clearDDS_SYNC(&ev_buff);
@@ -176,9 +170,6 @@ int main()
             ev_buff.size --;
         }
         ev_buff.start = ev_buff.start % FIFO_SIZE;
-
-        XTime_GetTime(p_after_test);
-        time_eval = (u64) after_test - (u64) before_test;
         DDS_SYNCCacheFlush(NULL);
         //TM_PRINTF("%lu\n\r",time_eval);
     }

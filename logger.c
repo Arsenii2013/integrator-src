@@ -75,11 +75,13 @@ uint32_t integratorCfgConvert(uint32_t cfg){
     for(int i = 0, j = 0; (i < 32) && (j < 32); i++){
         if(cfg & 1 << i) {
             res |= 1 << j;
-            j ++;
-            if(bits & 1 << i){ // 64
+        }
+        j ++;
+        if(bits & 1 << i){ // 64
+            if(cfg & 1 << i) {
                 res |= 1 << j;
-                j ++;
             }
+            j ++;
         }
     }
     return res;

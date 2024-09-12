@@ -96,12 +96,10 @@ int main()
     uint32_t events [] = {0x12, 0x13, 0x17, 0x18, 0x20};
     uint64_t cycles [] = {0,    0,    100,  100,  120};
     testGenInit(events, cycles, eventsN, repeat);
-    initSCR();
     AFEEmulinit();
     #else
     init_platform();
     initPStoPL();
-    initSCR();
     TM_PRINTF("start\n\r");
     int afeRes = AFEInit();
     TM_PRINTF("AFE pwr good: %d\n\r", afeRes);
@@ -111,8 +109,9 @@ int main()
     #endif
     #endif
 
-    uint32_t lev = 0;
+    initSCR();
     loggerInit();
+    DDS_SYNCCacheFlush(NULL);
 
     schedulerRecord apps[] = {
         #ifdef DEBUG
@@ -170,8 +169,6 @@ int main()
             ev_buff.size --;
         }
         ev_buff.start = ev_buff.start % FIFO_SIZE;
-        DDS_SYNCCacheFlush(NULL);
-        //TM_PRINTF("%lu\n\r",time_eval);
     }
     printLog();
     

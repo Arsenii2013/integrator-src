@@ -124,7 +124,7 @@ float MFMGetB(){
     if(mode == MFM_MODE_ANALOG_TO_ANALOG || mode == MFM_MODE_ANALOG_TO_DIGITAL){
         return (float)koeffAB * (float)((double)MFMGetIntegral());
     } else if(mode == MFM_MODE_DIGITAL_TO_ANALOG || mode == MFM_MODE_DIGITAL_TO_DIGITAL){
-        return (float)koeffDB * (float)((double)MFMGetIntegral();
+        return (float)koeffDB * (float)((double)MFMGetIntegral());
     }
     return 0.f;
 }

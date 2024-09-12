@@ -70,6 +70,7 @@ int AFEDDS_SYNC(void*){
 
     koeffAB = controlKoeffAB();
     koeffDB = controlKoeffDB();
+    mode    = controlMode();
     return 0;
 }
 

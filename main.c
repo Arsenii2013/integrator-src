@@ -111,7 +111,9 @@ int main()
 
     initSCR();
     loggerInit();
+    #ifndef TEST
     DDS_SYNCCacheFlush(NULL);
+    #endif
 
     schedulerRecord apps[] = {
         #ifdef DEBUG
@@ -143,7 +145,7 @@ int main()
     clearEvents();
     #endif
 
-    DDS_SYNCCacheInvalidate(NULL);
+    //DDS_SYNCCacheInvalidate(NULL);
     while (flag) {
         #ifdef TEST
         testWaitDDS_SYNC();

@@ -1,6 +1,6 @@
 #include "AFE.h"
 
-volatile AFERegs * REGS_BASE_AFE = 0x40000000 + 0x1800;
+volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x40001800;
 //volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x10000000;
 uint32_t reset = 0;
 uint32_t calibration_cnt = 0;
@@ -36,22 +36,22 @@ void MFMStartCalibration(){
 }
 
 void MFMSetB0(uint32_t B0){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    //AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     //TODO regs->MFM.b0 = B0;
 }
 
 void MFMSetATOA(uint32_t coeff){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    //AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     //TODO regs->MFM.analog_to_analog = coeff;
 }
 
 void MFMSetATOD(uint32_t coeff){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    //AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     //TODO regs->MFM.b_series_analog = coeff;
 }
 
 void MFMSetDTOA(uint32_t coeff){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    //AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     //TODO regs->MFM.digital_to_analog = coeff;
 }
 
@@ -75,7 +75,6 @@ int AFEDDS_SYNC(void*){
 }
 
 int AFEEvent(uint32_t event, void*){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     if(event == 0){
         return 0;
     }
@@ -98,7 +97,7 @@ int AFEEvent(uint32_t event, void*){
 }
 
 void MFMSetMode(int new_mode){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    //AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     //TODO regs->MFM.mode = new_mode;
     mode = new_mode;
 }
@@ -135,7 +134,7 @@ int32_t MFMGetADC(){
 }
 
 int32_t MFMGetDAC(){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    //AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     return 0;
 }
 

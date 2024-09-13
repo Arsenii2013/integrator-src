@@ -1,4 +1,7 @@
 #include "scr.h"
+#ifndef TEST
+#include "xil_cache.h"    
+#endif
 
 //statusControlRegisters * REGS_BASE_SCR = 0x40000000 + 0x2000;
 volatile statusControlRegisters * REGS_BASE_SCR = (statusControlRegisters *)0x3A001000;
@@ -34,7 +37,7 @@ volatile statusControlRegisters * SCRegPtr(){
 
 void flushIfnTEST(){
     #ifndef TEST
-    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
+    Xil_DCacheFlushRange((intptr_t)SCRegPtr(), sizeof(statusControlRegisters));
     #endif
 }
 
@@ -75,6 +78,7 @@ int controlDDS_SYNC(void*){
         regs->LOG_ERR = 0;
         regs->HP_ERR = 0;
     }
+    return 0;
 }
 
 void statusAFEStartStop(){
@@ -185,7 +189,7 @@ uint32_t controlCalEv(){
 uint32_t controlKoeffAB(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     uint32_t K_sens = regs->K_ANALOG_TO_B;
-    float K = 2.5 * DDS_SYNC_PRD * powf(10., -6) / 2.487951 / powf(2., 17) / (float)K_sens;
+    //float K = 2.5 * DDS_SYNC_PRD * powf(10., -6) / 2.487951 / powf(2., 17) / (float)K_sens;
     return K_sens;
 }
 

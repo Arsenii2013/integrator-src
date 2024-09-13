@@ -65,7 +65,8 @@ uint32_t readEvents(cyclicBuffer * buff){
             buff->size++;
         }else{
             statusOverflowEvents();
-            volatile uint32_t rd = *((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
+            //volatile uint32_t rd = *((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
+            (void)*((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
         }
         i++;
     }
@@ -102,7 +103,8 @@ void clearDDS_SYNC(cyclicBuffer * buff){
 
 void clearEvents(){
     while(!(*((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + SR)) & 0x1)){
-        volatile uint32_t rd = *((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
+        //volatile uint32_t rd = *((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
+        (void)*((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
     }
     return;
 }

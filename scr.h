@@ -56,7 +56,7 @@ void statusLogStartStart();
 void statusLogSwitch();
 void statusLogOverflow();
 
-void controlDDS_SYNC();
+int controlDDS_SYNC(void*);
 
 uint32_t controlB0();
 uint32_t controlB0Ev();

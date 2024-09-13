@@ -49,7 +49,6 @@ void loggerInit(){
     };
 
     *REGS_BASE_LOG = defaults;
-    Xil_DCacheFlushRange(loggerRegPtr(), sizeof(logRegs));
 }
 
 size_t writeEntry(logEntry e, void * addr){
@@ -65,7 +64,6 @@ size_t writeEntry(logEntry e, void * addr){
             writed++;
         }
     }
-    Xil_DCacheFlushRange(addr, writed*4);
     return writed;
 }
 

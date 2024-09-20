@@ -171,23 +171,18 @@ int loggerEvent(uint32_t ev, void*){
     }
     uint32_t running = !(regs->SR & (1 << SR_IDLE)); 
 
-    if(running){
-        for(int i = 0; i < BANK_NUM; i ++){
-            if(ev == regs->STOP[i]){
-                //regs->CR |= 1 << CR_STOP;
-                stopLog = 1; 
-                if((regs->CR >> CR_MODE) & 0b01){
-                    //regs->CR |= 1 << CR_SWITCH;
-                    switchLog = 1;
-                }
+    
+    for(int i = 0; i < BANK_NUM; i ++){
+        if(ev == regs->STOP[i]){
+            stopLog = 1; 
+            if((regs->CR >> CR_MODE) & 0b01){
+                switchLog = 1;
             }
         }
-    }else{
-        for(int i = 0; i < BANK_NUM; i ++){
-            if(ev == regs->START[i]){
-                //regs->CR |= 1 << CR_START;
-                startLog = 1;
-            }
+    }
+    for(int i = 0; i < BANK_NUM; i ++){
+        if(ev == regs->START[i]){
+            startLog = 1;
         }
     }
     return 0;

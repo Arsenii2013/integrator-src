@@ -3,7 +3,8 @@
 volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x40001800;
 //volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x10000000;
 uint32_t reset = 0;
-uint32_t calibration_cnt = 0;
+uint32_t calibration_flag = 0;
+uint32_t calibration_cnt  = 0;
 uint32_t koeffAB = 0;
 uint32_t koeffDB = 0;
 uint32_t mode = MFM_MODE_ANALOG_TO_ANALOG;
@@ -32,7 +33,14 @@ void MFMResetIntegral(){
 void MFMStartCalibration(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_CALIBRATON;
-    calibration_cnt = 0;
+    calibration_flag = 1;
+    calibration_cnt  = 0;
+}
+
+void MFMStopCalibration(){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_CALIBRATON);
+    calibration_flag = 0;
 }
 
 void MFMSetB0(uint32_t B0){
@@ -62,9 +70,10 @@ int AFEDDS_SYNC(void*){
         regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_ZERO);
     }
 
-    if(calibration_cnt == CALIBRATION_TIME && ( regs->MFM.ctrl_reg & (1 << MFM_CTRL_ZERO))){
-        regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_CALIBRATON);
-    }else if(calibration_cnt < CALIBRATION_TIME){
+    if(calibration_flag && ( regs->MFM.ctrl_reg & (1 << MFM_CTRL_CALIBRATON))){
+        MFMStopCalibration();
+    }
+    if(calibration_cnt <= CALIBRATION_TIME){
         calibration_cnt++;
     }
 
@@ -141,7 +150,7 @@ int32_t MFMGetDAC(){
 void AFEEmulinit(){
     REGS_BASE_AFE = (AFERegs *) malloc(sizeof(AFERegs));
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
-    regs->ctrl_reg = 0;
+    regs->ctrl_reg = 7;
     regs->dds_ena_reg = 0xf;
     regs->ph_adj_start = 0;
     regs->stat_reg = 0x3;
@@ -161,3 +170,8 @@ void AFEEmulinit(){
     regs->MFM.last_cal_adc_data = 0x0;
     regs->MFM.last_raw_adc_data = 0xffffffde;
 }   
+
+void AFEInit(){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    regs->ctrl_reg = 0;
+}

@@ -30,10 +30,10 @@ void initPStoPL(){
     #endif
 }
 
-int AFEInit(){
+int AFEPwr(){
     #ifndef TEST
     XGpioPs_SetOutputEnablePin(&bank2, AFE_PWR_PIN, 1);
-    for(int i = 0; i < 10000; i ++){};
+    for(int i = 0; i < 100000000; i ++){};
     return XGpioPs_ReadPin(&bank2, AFE_PWR_PIN);
     #endif
 }

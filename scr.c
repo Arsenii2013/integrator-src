@@ -186,11 +186,11 @@ uint32_t controlCalEv(){
     return regs->CALIBRATION_EV;
 }
 
-uint32_t controlKoeffAB(){
+float controlKoeffAB(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     uint32_t K_sens = regs->K_ANALOG_TO_B;
-    //float K = 2.5 * DDS_SYNC_PRD * powf(10., -6) / 2.487951 / powf(2., 17) / (float)K_sens;
-    return K_sens;
+    float K = 2.5 / 2.487951 * (float)DDS_SYNC_PRD * powf(10., -6) / 2 / (float)K_sens;
+    return K;
 }
 
 uint32_t controlKoeffDB(){

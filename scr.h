@@ -66,7 +66,7 @@ uint32_t controlResetEv();
 uint32_t controlCalEv();
 
 
-uint32_t controlKoeffAB();
+float controlKoeffAB();
 uint32_t controlKoeffDB();
 uint32_t controlKoeffBA();
 uint32_t controlBSeries();

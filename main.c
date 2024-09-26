@@ -55,15 +55,15 @@ int DDS_SYNCApp(void*){
 #ifndef TEST
 int DDS_SYNCCacheInvalidate(void*){
     //Xil_DCacheFlush();
-    Xil_DCacheInvalidateRange(loggerRegPtr(), sizeof(logRegs));
-    Xil_DCacheInvalidateRange(SCRegPtr(), sizeof(statusControlRegisters));
+    Xil_DCacheInvalidateRange((intptr_t)loggerRegPtr(), sizeof(logRegs));
+    Xil_DCacheInvalidateRange((intptr_t)SCRegPtr(), sizeof(statusControlRegisters));
     return 0;
 }
 
 int DDS_SYNCCacheFlush(void*){
     //Xil_DCacheFlush();
-    Xil_DCacheFlushRange(loggerRegPtr(), sizeof(logRegs));
-    Xil_DCacheFlushRange(SCRegPtr(), sizeof(statusControlRegisters));
+    Xil_DCacheFlushRange((intptr_t)loggerRegPtr(), sizeof(logRegs));
+    Xil_DCacheFlushRange((intptr_t)SCRegPtr(), sizeof(statusControlRegisters));
     return 0;
 }
 #endif
@@ -126,7 +126,7 @@ int main()
         
         {.name="logger", .DDS_SYNCCallback=loggerDDS_SYNC, .eventCallback=loggerEvent, .appData=NULL}, 
         //{.name="AFEEmul", .DDS_SYNCCallback=AFEEmulDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
-        {.name="log", .DDS_SYNCCallback=DDS_SYNCApp, .eventCallback=eventApp, .appData=NULL}, 
+        {.name="app", .DDS_SYNCCallback=DDS_SYNCApp, .eventCallback=eventApp, .appData=NULL}, 
         {.name="AFE", .DDS_SYNCCallback=AFEDDS_SYNC, .eventCallback=AFEEvent, .appData=NULL}, 
         #ifndef TEST
         {.name="stop", .DDS_SYNCCallback=stopDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 

@@ -44,6 +44,8 @@ void schedulerDDS_SYNC(){
             if(exitCode != 0){
                 TM_PRINTF("%s DDS_SYNC callback exit with code %d\n\r", schedulerInfo[i].name, exitCode);
             }
+            #else
+            (void)exitCode;
             #endif
         }
     }
@@ -72,6 +74,8 @@ void schedulerEvent(uint32_t ev){
             if(exitCode != 0){
                 TM_PRINTF("%s callback on event %d exit with code %d\n\r", schedulerInfo[i].name, ev, exitCode);
             }
+            #else
+            (void)exitCode;
             #endif
         }
 

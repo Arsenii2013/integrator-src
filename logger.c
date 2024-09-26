@@ -10,7 +10,7 @@
 //logRegs * REGS_BASE_LOG = 0x40000000 + 0x1C00;
 volatile logRegs * REGS_BASE_LOG = (logRegs *)0x3A000000;
 
-uint8_t * bankAddrs [BANK_NUM] = {(uint8_t *)0x00000000, (uint8_t *)0x10000000};
+uint32_t * bankAddrs [BANK_NUM] = {(uint32_t *)0x00000000, (uint32_t *)0x10000000};
 uint32_t bankCnt [BANK_NUM] = {0, 0};
 
 uint32_t startLog = 0;
@@ -64,6 +64,9 @@ size_t writeEntry(logEntry e, void * addr){
             writed++;
         }
     }
+    #ifndef TEST
+    Xil_DCacheFlushRange((intptr_t)addr, writed*4);
+    #endif
     return writed;
 }
 
@@ -96,13 +99,13 @@ void logg(logEntry e){
         return;
     }
     if(bankCnt[activeBank] == 0){
-        if(regs->bankRegs[activeBank].size == BANK_MAX_SIZE){
+        if(regs->bankRegs[activeBank].size >= BANK_MAX_SIZE){
             statusLogOverflow();
             return;
         }
         e.desc = integratorCfgConvert(regs->bankRegs[activeBank].cfg);
-        writeEntry(e, bankAddrs[activeBank] + regs->bankRegs[activeBank].size * logEntrySize(e.desc) * 4);
-        regs->bankRegs[activeBank].size ++;
+        writeEntry(e, bankAddrs[activeBank] + regs->bankRegs[activeBank].size);
+        regs->bankRegs[activeBank].size += logEntrySize(e.desc);
         bankCnt[activeBank] = regs->bankRegs[activeBank].dcm;
     } else {
         bankCnt[activeBank] --;
@@ -168,23 +171,18 @@ int loggerEvent(uint32_t ev, void*){
     }
     uint32_t running = !(regs->SR & (1 << SR_IDLE)); 
 
-    if(running){
-        for(int i = 0; i < BANK_NUM; i ++){
-            if(ev == regs->STOP[i]){
-                //regs->CR |= 1 << CR_STOP;
-                stopLog = 1; 
-                if((regs->CR >> CR_MODE) & 0b01){
-                    //regs->CR |= 1 << CR_SWITCH;
-                    switchLog = 1;
-                }
+    
+    for(int i = 0; i < BANK_NUM; i ++){
+        if(ev == regs->STOP[i]){
+            stopLog = 1; 
+            if((regs->CR >> CR_MODE) & 0b01){
+                switchLog = 1;
             }
         }
-    }else{
-        for(int i = 0; i < BANK_NUM; i ++){
-            if(ev == regs->START[i]){
-                //regs->CR |= 1 << CR_START;
-                startLog = 1;
-            }
+    }
+    for(int i = 0; i < BANK_NUM; i ++){
+        if(ev == regs->START[i]){
+            startLog = 1;
         }
     }
     return 0;

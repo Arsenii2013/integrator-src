@@ -3,7 +3,7 @@
 #include "main.h"
 
 #define BANK_NUM 2
-#define BANK_MAX_SIZE 100000
+#define BANK_MAX_SIZE 1024*1024*256/4
 
 typedef struct
 {

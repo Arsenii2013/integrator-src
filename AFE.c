@@ -1,9 +1,10 @@
 #include "AFE.h"
 
-volatile AFERegs * REGS_BASE_AFE = 0x40000000 + 0x1800;
+volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x40001800;
 //volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x10000000;
 uint32_t reset = 0;
-uint32_t calibration_cnt = 0;
+uint32_t calibration_flag = 0;
+uint32_t calibration_cnt  = 0;
 uint32_t koeffAB = 0;
 uint32_t koeffDB = 0;
 uint32_t mode = MFM_MODE_ANALOG_TO_ANALOG;
@@ -32,26 +33,33 @@ void MFMResetIntegral(){
 void MFMStartCalibration(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_CALIBRATON;
-    calibration_cnt = 0;
+    calibration_flag = 1;
+    calibration_cnt  = 0;
+}
+
+void MFMStopCalibration(){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_CALIBRATON);
+    calibration_flag = 0;
 }
 
 void MFMSetB0(uint32_t B0){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    //AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     //TODO regs->MFM.b0 = B0;
 }
 
 void MFMSetATOA(uint32_t coeff){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    //AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     //TODO regs->MFM.analog_to_analog = coeff;
 }
 
 void MFMSetATOD(uint32_t coeff){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    //AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     //TODO regs->MFM.b_series_analog = coeff;
 }
 
 void MFMSetDTOA(uint32_t coeff){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    //AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     //TODO regs->MFM.digital_to_analog = coeff;
 }
 
@@ -62,9 +70,10 @@ int AFEDDS_SYNC(void*){
         regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_ZERO);
     }
 
-    if(calibration_cnt == CALIBRATION_TIME && ( regs->MFM.ctrl_reg & (1 << MFM_CTRL_ZERO))){
-        regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_CALIBRATON);
-    }else if(calibration_cnt < CALIBRATION_TIME){
+    if(calibration_flag && ( regs->MFM.ctrl_reg & (1 << MFM_CTRL_CALIBRATON))){
+        MFMStopCalibration();
+    }
+    if(calibration_cnt <= CALIBRATION_TIME){
         calibration_cnt++;
     }
 
@@ -75,7 +84,6 @@ int AFEDDS_SYNC(void*){
 }
 
 int AFEEvent(uint32_t event, void*){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     if(event == 0){
         return 0;
     }
@@ -98,7 +106,7 @@ int AFEEvent(uint32_t event, void*){
 }
 
 void MFMSetMode(int new_mode){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    //AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     //TODO regs->MFM.mode = new_mode;
     mode = new_mode;
 }
@@ -135,14 +143,14 @@ int32_t MFMGetADC(){
 }
 
 int32_t MFMGetDAC(){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    //AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     return 0;
 }
 
 void AFEEmulinit(){
     REGS_BASE_AFE = (AFERegs *) malloc(sizeof(AFERegs));
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
-    regs->ctrl_reg = 0;
+    regs->ctrl_reg = 7;
     regs->dds_ena_reg = 0xf;
     regs->ph_adj_start = 0;
     regs->stat_reg = 0x3;
@@ -162,3 +170,8 @@ void AFEEmulinit(){
     regs->MFM.last_cal_adc_data = 0x0;
     regs->MFM.last_raw_adc_data = 0xffffffde;
 }   
+
+void AFEInit(){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    regs->ctrl_reg = 0;
+}

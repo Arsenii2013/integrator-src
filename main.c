@@ -86,6 +86,22 @@ void PCIELoggerSetup(){
 }
 #endif
 
+int rstDDS_SYNC(void*){
+    static uint32_t prev = 1;
+    uint32_t atm = controlAFERst();
+    if(prev != atm){
+        if(atm){
+            TM_PRINTF("AFE off\n\r");
+            AFEPwrOff();
+        }else{
+            TM_PRINTF("AFE on\n\r");
+            AFEPwrOn();
+        }
+        prev = atm;
+    }
+    return 0;
+}
+
 int main()
 {
     cyclicBuffer ev_buff = {.size = 0, .start = 0, .data = {0}};
@@ -98,10 +114,12 @@ int main()
     testGenInit(events, cycles, eventsN, repeat);
     AFEEmulinit();
     #else
+    
     init_platform();
     initPStoPL();
     TM_PRINTF("start\n\r");
-    int afeRes = AFEInit();
+    int afeRes = AFEPwrOn();
+    AFEInit();
     TM_PRINTF("AFE pwr good: %d\n\r", afeRes);
     #ifdef DEBUG
     volatile uint32_t tmp = readEvent();
@@ -124,6 +142,7 @@ int main()
         #endif
         {.name="control", .DDS_SYNCCallback=controlDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
         
+        {.name="rst", .DDS_SYNCCallback=rstDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
         {.name="logger", .DDS_SYNCCallback=loggerDDS_SYNC, .eventCallback=loggerEvent, .appData=NULL}, 
         //{.name="AFEEmul", .DDS_SYNCCallback=AFEEmulDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
         {.name="app", .DDS_SYNCCallback=DDS_SYNCApp, .eventCallback=eventApp, .appData=NULL}, 

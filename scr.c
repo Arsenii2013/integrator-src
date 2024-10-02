@@ -12,17 +12,22 @@ void initSCR(){
         statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     #endif
     REGS_BASE_SCR->SR = 0;
-    REGS_BASE_SCR->CR = 0;
+    REGS_BASE_SCR->CR = 1 << AFE_PWR;
     REGS_BASE_SCR->CR_S = 0;
     REGS_BASE_SCR->CR_C = 0;
     REGS_BASE_SCR->AFE_ERR = 0;
     REGS_BASE_SCR->LOG_ERR = 0;
     REGS_BASE_SCR->HP_ERR = 0;
     REGS_BASE_SCR->B0 = 0;
-    REGS_BASE_SCR->B0_EV = 0;
-    REGS_BASE_SCR->START_EV = 0;
-    REGS_BASE_SCR->STOP_EV = 0;
-    REGS_BASE_SCR->RESET_EV = 0;
+    REGS_BASE_SCR->START_EV[0] = 0;
+    REGS_BASE_SCR->START_EV[1] = 0;
+    REGS_BASE_SCR->START_EV[2] = 0;
+    REGS_BASE_SCR->START_EV[3] = 0;
+    REGS_BASE_SCR->STOP_EV[0] = 0;
+    REGS_BASE_SCR->STOP_EV[1] = 0;
+    REGS_BASE_SCR->STOP_EV[2] = 0;
+    REGS_BASE_SCR->STOP_EV[3] = 0;
+    REGS_BASE_SCR->ZERO_EV = 0;
     REGS_BASE_SCR->CALIBRATION_EV = 0;
     REGS_BASE_SCR->MODE = 0;
     REGS_BASE_SCR->K_ANALOG_TO_B = 0;
@@ -157,28 +162,41 @@ void statusLogOverflow(){
     #endif
 }
 
+uint32_t controlAFEPwr(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->CR && (1 << AFE_PWR);
+}
+
 uint32_t controlB0(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     return regs->B0;
 }
-uint32_t controlB0Ev(){
+
+uint32_t controlStartEv(uint32_t i){
+    if(i > SCR_EVENTS_N){
+        #ifdef DEBUG
+        TM_PRINTF("DEBUG: control registers read err\n\r");
+        #endif
+        return 0;
+    }
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->B0_EV;
+    return regs->START_EV[i];
 }
 
-uint32_t controlStartEv(){
+uint32_t controlStopEv(uint32_t i){
+    if(i > SCR_EVENTS_N){
+        #ifdef DEBUG
+        TM_PRINTF("DEBUG: control registers read err\n\r");
+        #endif
+        return 0;
+    }
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->START_EV;
-}
-
-uint32_t controlStopEv(){
-    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->STOP_EV;
+    return regs->STOP_EV[i];
 }
 
 uint32_t controlResetEv(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->RESET_EV;
+    return regs->ZERO_EV;
 }
 
 uint32_t controlCalEv(){
@@ -186,24 +204,24 @@ uint32_t controlCalEv(){
     return regs->CALIBRATION_EV;
 }
 
-float controlKoeffAB(){
+float controlCoeffAB(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     uint32_t K_sens = regs->K_ANALOG_TO_B;
     float K = 2.5 / 2.487951 * (float)DDS_SYNC_PRD * powf(10., -6) / 2 / (float)K_sens;
     return K;
 }
 
-uint32_t controlKoeffDB(){
+uint32_t controlCoeffDB(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     return regs->K_DIGITAL_TO_B;
 }
 
-uint32_t controlKoeffBA(){
+uint32_t controlCoeffBA(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     return regs->K_B_TO_ANALOG;
 }
 
-uint32_t controlBSeries(){
+uint32_t controlCoeffBD(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     return regs->K_B_SERIES;
 }

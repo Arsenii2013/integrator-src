@@ -148,7 +148,7 @@ int main()
         {.name="app", .DDS_SYNCCallback=DDS_SYNCApp, .eventCallback=eventApp, .appData=NULL}, 
         {.name="AFE", .DDS_SYNCCallback=AFEDDS_SYNC, .eventCallback=AFEEvent, .appData=NULL}, 
         #ifndef TEST
-        {.name="stop", .DDS_SYNCCallback=stopDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
+        //{.name="stop", .DDS_SYNCCallback=stopDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
         {.name="cacheFlush", .DDS_SYNCCallback=DDS_SYNCCacheFlush, .eventCallback=NULL, .appData=NULL}, 
         #endif
         {.name="",     .DDS_SYNCCallback=NULL,          .eventCallback=NULL,       .appData=NULL}, 
@@ -159,13 +159,12 @@ int main()
     #ifdef TEST
     PCIELoggerSetup();
     #endif
-    uint32_t flag = 1;
     #ifndef TEST
     clearEvents();
     #endif
 
     //DDS_SYNCCacheInvalidate(NULL);
-    while (flag) {
+    while (1) {
         #ifdef TEST
         testWaitDDS_SYNC();
         testReadEvents(&ev_buff);
@@ -183,9 +182,6 @@ int main()
             if(ev_buff.size == 0)
                 break;
             schedulerEvent(ev_buff.data[ev_buff.start % FIFO_SIZE]);
-            if(ev_buff.data[ev_buff.start % FIFO_SIZE] == 0x20){
-                flag = 0;
-            }
             ev_buff.start ++;
             ev_buff.size --;
         }

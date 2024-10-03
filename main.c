@@ -4,9 +4,9 @@
 #include "scheduler.h"
 //#include "sin_integral_emulator.h"
 #include "AFE.h"
+#include "scr.h"
 #include "AFE_emulator.h"
 
-#include "stop.h"
 #ifdef TEST
 #include "test_gen.h"
 #endif
@@ -16,11 +16,16 @@
 #endif
 
 int DDS_SYNCPrint(void *){
-    TM_PRINTF("DDS_SYNC\n\r");
+    //TM_PRINTF("DDS_SYNC\n\r");
     return 0;
 }
 int eventPrint(uint32_t ev, void *){
-    TM_PRINTF("Event %d\n\r", ev);
+    //TM_PRINTF("Event %d\n\r", ev);
+    return 0;
+}
+int eventPrintNZero(uint32_t ev, void *){
+    if(ev != 0)
+        TM_PRINTF("Event %d\n\r", ev);
     return 0;
 }
 
@@ -30,11 +35,13 @@ int eventApp(uint32_t ev, void*){
     if(ev == 0){
         return 0;
     }
-    if(ev == controlStartEv()){
-        appRunning = 1;
-    }
-    if(ev == controlStopEv()){
-        appRunning = 0;
+    for(int i = 0; i < 4; i++){
+        if(ev == controlStartEv(i)){
+            appRunning = 1;
+        }
+        if(ev == controlStopEv(i)){
+            appRunning = 0;
+        }
     }
     return 0;
 }
@@ -88,7 +95,7 @@ void PCIELoggerSetup(){
 
 int rstDDS_SYNC(void*){
     static uint32_t prev = 1;
-    uint32_t atm = controlAFERst();
+    uint32_t atm = controlAFEPwr();
     if(prev != atm){
         if(atm){
             TM_PRINTF("AFE off\n\r");
@@ -141,8 +148,9 @@ int main()
         {.name="cacheInv", .DDS_SYNCCallback=DDS_SYNCCacheInvalidate, .eventCallback=NULL, .appData=NULL}, 
         #endif
         {.name="control", .DDS_SYNCCallback=controlDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
+        //{.name="print", .DDS_SYNCCallback=NULL, .eventCallback=eventPrintNZero, .appData=NULL}, 
         
-        {.name="rst", .DDS_SYNCCallback=rstDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
+        //{.name="rst", .DDS_SYNCCallback=rstDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
         {.name="logger", .DDS_SYNCCallback=loggerDDS_SYNC, .eventCallback=loggerEvent, .appData=NULL}, 
         //{.name="AFEEmul", .DDS_SYNCCallback=AFEEmulDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
         {.name="app", .DDS_SYNCCallback=DDS_SYNCApp, .eventCallback=eventApp, .appData=NULL}, 

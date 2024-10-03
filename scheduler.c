@@ -19,7 +19,7 @@ void schedulerSet(schedulerRecord * app){
 
 void schedulerDDS_SYNC(){
     #ifdef PROFILING
-    uint32_t time_eval;
+    uint64_t time_eval;
     XTime before_test;
     XTime *p_before_test = &before_test;
     XTime after_test;

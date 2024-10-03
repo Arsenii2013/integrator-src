@@ -194,7 +194,7 @@ uint32_t controlStopEv(uint32_t i){
     return regs->STOP_EV[i];
 }
 
-uint32_t controlResetEv(){
+uint32_t controlZeroEv(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     return regs->ZERO_EV;
 }

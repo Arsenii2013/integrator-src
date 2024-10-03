@@ -12,16 +12,16 @@ typedef struct
     uint32_t AFE_ERR;
     uint32_t LOG_ERR;
     uint32_t HP_ERR;
-    uint32_t B0;
-    uint32_t START_EV[SCR_EVENTS_N];
-    uint32_t STOP_EV[SCR_EVENTS_N];
-    uint32_t ZERO_EV;
-    uint32_t CALIBRATION_EV;
     uint32_t MODE;
+    uint32_t B0;
     uint32_t K_ANALOG_TO_B;
     uint32_t K_DIGITAL_TO_B;
     uint32_t K_B_TO_ANALOG;
     uint32_t K_B_SERIES;
+    uint32_t START_EV[SCR_EVENTS_N];
+    uint32_t STOP_EV[SCR_EVENTS_N];
+    uint32_t ZERO_EV;
+    uint32_t CALIBRATION_EV;
 } statusControlRegisters;
 
 #define SR_TIME       0

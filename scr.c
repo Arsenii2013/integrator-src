@@ -31,9 +31,9 @@ void initSCR(){
     REGS_BASE_SCR->CALIBRATION_EV = 0;
     REGS_BASE_SCR->MODE = 0;
     REGS_BASE_SCR->K_ANALOG_TO_B = 0;
-    REGS_BASE_SCR->K_DIGITAL_TO_B = 0;
+    REGS_BASE_SCR->BSER_IN = 0;
     REGS_BASE_SCR->K_B_TO_ANALOG = 0;
-    REGS_BASE_SCR->K_B_SERIES = 0;
+    REGS_BASE_SCR->BSER_OUT = 0;
 }
 
 volatile statusControlRegisters * SCRegPtr(){
@@ -167,11 +167,6 @@ uint32_t controlAFEPwr(){
     return regs->CR && (1 << AFE_PWR);
 }
 
-uint32_t controlB0(){
-    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->B0;
-}
-
 uint32_t controlStartEv(uint32_t i){
     if(i > SCR_EVENTS_N){
         #ifdef DEBUG
@@ -204,6 +199,11 @@ uint32_t controlCalEv(){
     return regs->CALIBRATION_EV;
 }
 
+float controlB0(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return *(float*)&regs->B0;
+}
+
 float controlCoeffAB(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     uint32_t K_sens = regs->K_ANALOG_TO_B;
@@ -211,9 +211,9 @@ float controlCoeffAB(){
     return K;
 }
 
-float controlCoeffDB(){
+float controlBserIn(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return *(float*)&regs->K_DIGITAL_TO_B;
+    return *(float*)&regs->BSER_IN;
 }
 
 float controlCoeffBA(){
@@ -222,13 +222,13 @@ float controlCoeffBA(){
     return K;
 }
 
-float controlCoeffBD(){
+float controlBserOut(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return *(float*)&regs->K_B_SERIES;
+    return *(float*)&regs->BSER_OUT;
 }
 
 
 uint32_t controlMode(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return *(float*)&regs->MODE;
+    return regs->MODE;
 }

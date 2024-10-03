@@ -15,9 +15,9 @@ typedef struct
     uint32_t MODE;
     uint32_t B0;
     uint32_t K_ANALOG_TO_B;
-    uint32_t K_DIGITAL_TO_B;
+    uint32_t BSER_IN;
     uint32_t K_B_TO_ANALOG;
-    uint32_t K_B_SERIES;
+    uint32_t BSER_OUT;
     uint32_t START_EV[SCR_EVENTS_N];
     uint32_t STOP_EV[SCR_EVENTS_N];
     uint32_t ZERO_EV;
@@ -59,17 +59,17 @@ void statusLogOverflow();
 
 int controlDDS_SYNC(void*);
 
-uint32_t controlB0();
 uint32_t controlStartEv(uint32_t i);
 uint32_t controlStopEv(uint32_t i);
 uint32_t controlZeroEv();
 uint32_t controlCalEv();
 uint32_t controlAFEPwr();
 
+float controlB0();
 float controlCoeffAB();
-float controlCoeffDB();
+float controlBserIn();
 float controlCoeffBA();
-float controlCoeffBD();
+float controlBserOut();
 
 uint32_t controlMode();
 

@@ -23,6 +23,20 @@ void MFMPrintRegs(){
 
 void MFMRefreshOffset();
 
+void MFMSetBser(){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    uint32_t Bser_ctrl = regs->MFM.dac_ctrl_reg & 0xffffffffb;
+    Bser_ctrl |= 1 << MFM_BSER_ENA;
+    regs->MFM.dac_ctrl_reg = Bser_ctrl;
+}
+
+void MFMResetBser(){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    uint32_t Bser_ctrl = regs->MFM.dac_ctrl_reg & 0xffffffffb;
+    Bser_ctrl &= ~(1 << MFM_BSER_ENA);
+    regs->MFM.dac_ctrl_reg = Bser_ctrl;
+}
+
 volatile AFERegs * AFERegPtr(){
     return  REGS_BASE_AFE;
 }
@@ -31,6 +45,7 @@ void MFMStartIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_OPERATION;
     IternalAFEData.operation = 1;
+    MFMSetBser();
     #ifdef DEBUG
     TM_PRINTF("DEBUG: start integral\n\r");
     MFMPrintRegs();
@@ -41,6 +56,7 @@ void MFMStopIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_OPERATION);
     IternalAFEData.operation = 0;
+    MFMResetBser();
     #ifdef DEBUG
     TM_PRINTF("DEBUG: stop integral\n\r");
     MFMPrintRegs();
@@ -97,6 +113,59 @@ void MFMEndCalibration(){
     }
 }
 
+void MFMRefreshCoeffs(){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+
+    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG){
+        uint64_t coeff = (1. / (IternalAFEData.coeffAB * IternalAFEData.coeffBA));
+        regs->MFM.dac_coeff_hi = coeff >> 32;
+        regs->MFM.dac_coeff_low= coeff;
+    } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL){
+        uint64_t coeff = (1. / (IternalAFEData.coeffAB * IternalAFEData.coeffBD));
+        regs->MFM.bser_step_hi = coeff >> 32;
+        regs->MFM.bser_step_low= coeff;
+    } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
+        uint64_t coeff = IternalAFEData.coeffDB * IternalAFEData.coeffBA;
+        regs->MFM.dac_coeff_hi = coeff >> 32;
+        regs->MFM.dac_coeff_low= coeff;
+    } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_DIGITAL){
+        uint64_t coeff = IternalAFEData.coeffDB * IternalAFEData.coeffBD;
+        regs->MFM.bser_step_hi = coeff >> 32;
+        regs->MFM.bser_step_low= coeff;
+    }
+}
+
+void MFMRefreshOffset(){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+
+    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG)
+        regs->MFM.dac_offset = IternalAFEData.B0 * IternalAFEData.coeffBA;
+    if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG)
+        regs->MFM.dac_offset = IternalAFEData.B0 / (IternalAFEData.coeffDB * IternalAFEData.coeffBA);
+}
+
+void MFMRefreshMode(){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    uint32_t DAC_ctrl  = regs->MFM.dac_ctrl_reg & 0xffffffffc;
+    uint32_t Bser_ctrl = regs->MFM.bser_ctrl_reg & 0xffffffffc;
+
+    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG){
+        DAC_ctrl |= MFM_SOURCE_ANALOG;
+        Bser_ctrl|= MFM_SOURCE_ZERO;
+    } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL){
+        DAC_ctrl |= MFM_SOURCE_ZERO;
+        Bser_ctrl|= MFM_SOURCE_ANALOG;
+    } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
+        DAC_ctrl |= MFM_SOURCE_BSER;
+        Bser_ctrl|= MFM_SOURCE_ZERO;
+    } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG){
+        DAC_ctrl |= MFM_SOURCE_ZERO;
+        Bser_ctrl|= MFM_SOURCE_BSER;
+    }
+    regs->MFM.dac_ctrl_reg  = DAC_ctrl;
+    regs->MFM.bser_ctrl_reg = Bser_ctrl;
+}
+
 // TODO errors such as start stop and readback AFE stat reg
 int AFEEvent(uint32_t event, void*){
     if(event == 0){
@@ -112,65 +181,15 @@ int AFEEvent(uint32_t event, void*){
     }
     if(event == controlZeroEv()){
         MFMSetZeroIntegral();
-        MFMRefreshOffset();
+        if(IternalAFEData.B0 != controlB0()){
+            IternalAFEData.B0 = controlB0();
+            MFMRefreshOffset();
+        }
     }
     if(event == controlCalEv()){
         MFMSetCalibration();
     }
     return 0;
-}
-
-void MFMRefreshCoeffs(){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
-
-    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG){
-        uint64_t coeff = (1. / (IternalAFEData.coeffAB * IternalAFEData.coeffBA));
-        regs->MFM.dac_coeff_hi = coeff >> 32;
-        regs->MFM.dac_coeff_low= coeff;
-    } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL){
-        uint64_t coeff = IternalAFEData.coeffAB * IternalAFEData.coeffBD;
-        regs->MFM.bser_step_hi = coeff >> 32;
-        regs->MFM.bser_step_low= coeff;
-    } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
-        uint64_t coeff = IternalAFEData.coeffDB * IternalAFEData.coeffBA;
-        regs->MFM.dac_coeff_hi = coeff >> 32;
-        regs->MFM.dac_coeff_low= coeff;
-    } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL){
-        uint64_t coeff = IternalAFEData.coeffDB * IternalAFEData.coeffBD;
-        regs->MFM.bser_step_hi = coeff >> 32;
-        regs->MFM.bser_step_low= coeff;
-    }
-}
-
-void MFMRefreshOffset(){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
-
-    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG)
-        regs->MFM.dac_offset = IternalAFEData.B0 / (IternalAFEData.coeffAB * IternalAFEData.coeffBA);
-    if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG)
-        regs->MFM.dac_offset = IternalAFEData.B0 / (IternalAFEData.coeffDB * IternalAFEData.coeffBA);
-}
-
-void MFMRefreshMode(){
-    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
-
-    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG){
-        uint32_t ctrl = regs->MFM.dac_ctrl_reg;
-        ctrl = (ctrl & 0xffffffffc) | MFM_SOURCE_ANALOG;
-        regs->MFM.dac_ctrl_reg = ctrl;
-    } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL){
-        uint32_t ctrl = regs->MFM.bser_ctrl_reg;
-        ctrl = (ctrl & 0xffffffffc) | MFM_SOURCE_ANALOG;
-        regs->MFM.bser_ctrl_reg = ctrl;
-    } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
-        uint32_t ctrl = regs->MFM.dac_ctrl_reg;
-        ctrl = (ctrl & 0xffffffffc) | MFM_SOURCE_BSER;
-        regs->MFM.dac_ctrl_reg = ctrl;
-    } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG){
-        uint32_t ctrl = regs->MFM.bser_ctrl_reg;
-        ctrl = (ctrl & 0xffffffffc) | MFM_SOURCE_BSER;
-        regs->MFM.bser_ctrl_reg = ctrl;
-    }
 }
 
 int AFEDDS_SYNC(void*){
@@ -195,21 +214,17 @@ int AFEDDS_SYNC(void*){
         IternalAFEData.coeffAB = controlCoeffAB();
         MFMRefreshCoeffs();
     }
-    if(IternalAFEData.coeffDB != controlCoeffDB()){
-        IternalAFEData.coeffDB = controlCoeffDB();
+    if(IternalAFEData.coeffDB != controlBserIn()){
+        IternalAFEData.coeffDB = controlBserIn();
         MFMRefreshCoeffs();
     }
     if(IternalAFEData.coeffBA != controlCoeffBA()){
         IternalAFEData.coeffBA = controlCoeffBA();
         MFMRefreshCoeffs();
     }
-    if(IternalAFEData.coeffBD != controlCoeffBD()){
-        IternalAFEData.coeffBD = controlCoeffBD();
+    if(IternalAFEData.coeffBD != controlBserOut()){
+        IternalAFEData.coeffBD = controlBserOut();
         MFMRefreshCoeffs();
-    }
-    if(IternalAFEData.B0 != controlB0()){
-        IternalAFEData.B0 = controlB0();
-        //MFMRefreshOffset();
     }
     return 0;
 }
@@ -281,6 +296,7 @@ void AFEInit(){
     MFMRefreshMode();
     MFMRefreshCoeffs();
     MFMRefreshOffset();
+    MFMResetBser();
     #ifdef DEBUG
     MFMPrintRegs();
     #endif

@@ -69,17 +69,16 @@ typedef struct{
 
 #define MFM_STAT_CALIBRATION_READY 0
 
-#define CALIBRATION_TIME 50
-
 #define MFM_MODE_ANALOG_TO_ANALOG   0
 #define MFM_MODE_ANALOG_TO_DIGITAL  1
 #define MFM_MODE_DIGITAL_TO_ANALOG  2
 #define MFM_MODE_DIGITAL_TO_DIGITAL 3
 
-#define MFM_SOURCE_ZERO 0 
+#define MFM_SOURCE_ZERO   0
 #define MFM_SOURCE_ANALOG 1
-#define MFM_SOURCE_BSER 2 
-#define MFM_SOURCE_TEST 3 
+#define MFM_SOURCE_BSER   2
+#define MFM_SOURCE_TEST   3
+#define MFM_BSER_ENA      2
 
 int64_t MFMGetIntegral();
 float MFMGetB();

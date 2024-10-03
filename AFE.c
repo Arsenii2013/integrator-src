@@ -10,9 +10,9 @@ struct{
     uint32_t operation;
     float B0;
     float coeffAB;
-    uint32_t coeffDB;
-    uint32_t coeffBA;
-    uint32_t coeffBD;
+    float coeffDB;
+    float coeffBA;
+    float coeffBD;
     uint32_t mode;
 } IternalAFEData = {0, 0, 1, 0., 0., 0, 0, 0, MFM_MODE_ANALOG_TO_ANALOG};
 
@@ -124,7 +124,7 @@ void MFMRefreshCoeffs(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
 
     if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG){
-        uint64_t coeff = IternalAFEData.coeffAB * IternalAFEData.coeffBA;
+        uint64_t coeff = (1. / (IternalAFEData.coeffAB * IternalAFEData.coeffBA));
         regs->MFM.dac_coeff_hi = coeff >> 32;
         regs->MFM.dac_coeff_low= coeff;
     } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL){
@@ -245,7 +245,7 @@ int32_t MFMGetADC(){
     return regs->MFM.last_cal_adc_data;
 }
 
-int32_t MFMGetDAC(){
+uint32_t MFMGetDAC(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     return regs->MFM.dac_signal;
 }
@@ -278,6 +278,9 @@ void AFEInit(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->ctrl_reg = 0;
     regs->MFM.ctrl_reg = 0;
+    MFMRefreshMode();
+    MFMRefreshCoeffs();
+    MFMRefreshOffset();
     #ifdef DEBUG
     MFMPrintRegs();
     #endif

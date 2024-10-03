@@ -67,9 +67,9 @@ uint32_t controlCalEv();
 uint32_t controlAFEPwr();
 
 float controlCoeffAB();
-uint32_t controlCoeffDB();
-uint32_t controlCoeffBA();
-uint32_t controlCoeffBD();
+float controlCoeffDB();
+float controlCoeffBA();
+float controlCoeffBD();
 
 uint32_t controlMode();
 

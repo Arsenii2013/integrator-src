@@ -84,7 +84,7 @@ typedef struct{
 int64_t MFMGetIntegral();
 float MFMGetB();
 int32_t MFMGetADC();
-int32_t MFMGetDAC();
+uint32_t MFMGetDAC();
 
 int AFEDDS_SYNC(void*);
 int AFEEvent(uint32_t event, void*);

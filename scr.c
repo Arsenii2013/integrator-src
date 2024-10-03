@@ -207,27 +207,28 @@ uint32_t controlCalEv(){
 float controlCoeffAB(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     uint32_t K_sens = regs->K_ANALOG_TO_B;
-    float K = 2.5 / 2.487951 * (float)DDS_SYNC_PRD * powf(10., -6) / 2 / (float)K_sens;
+    float K = 2.5 / 2.487951 * (float)DDS_SYNC_PRD * powf(10., -6) / powf(2., 17) / *(float*)&K_sens;
     return K;
 }
 
-uint32_t controlCoeffDB(){
+float controlCoeffDB(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->K_DIGITAL_TO_B;
+    return *(float*)&regs->K_DIGITAL_TO_B;
 }
 
-uint32_t controlCoeffBA(){
+float controlCoeffBA(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->K_B_TO_ANALOG;
+    float K = *(float*)&regs->K_B_TO_ANALOG * powf(2., 14) / 10.75;
+    return K;
 }
 
-uint32_t controlCoeffBD(){
+float controlCoeffBD(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->K_B_SERIES;
+    return *(float*)&regs->K_B_SERIES;
 }
 
 
 uint32_t controlMode(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->MODE;
+    return *(float*)&regs->MODE;
 }

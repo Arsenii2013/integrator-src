@@ -138,6 +138,8 @@ int loggerDDS_SYNC(void*){
             regs->SR |= (1 << SR_IDLE);
             if(CRSwitch){
                 regs->SR   ^= (1 << SR_BANK);
+                switchLog  = 0; 
+                regs->CR   &= ~(1 << CR_SWITCH);
             }
         }
         if(CRStart){
@@ -158,10 +160,9 @@ int loggerDDS_SYNC(void*){
     }
 
 
-    regs->CR   &= ~((1 << CR_START) | (1 << CR_STOP) | (1 << CR_SWITCH));
+    regs->CR   &= ~((1 << CR_START) | (1 << CR_STOP));
     startLog = 0;
     stopLog  = 0;
-    switchLog= 0; 
     return 0;
 }
 

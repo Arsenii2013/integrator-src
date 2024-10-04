@@ -25,16 +25,12 @@ void MFMRefreshOffset();
 
 void MFMSetBser(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
-    uint32_t Bser_ctrl = regs->MFM.dac_ctrl_reg & 0xffffffffb;
-    Bser_ctrl |= 1 << MFM_BSER_ENA;
-    regs->MFM.dac_ctrl_reg = Bser_ctrl;
+    regs->MFM.bser_ctrl_reg |= 1 << MFM_BSER_ENA;
 }
 
 void MFMResetBser(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
-    uint32_t Bser_ctrl = regs->MFM.dac_ctrl_reg & 0xffffffffb;
-    Bser_ctrl &= ~(1 << MFM_BSER_ENA);
-    regs->MFM.dac_ctrl_reg = Bser_ctrl;
+    regs->MFM.bser_ctrl_reg &= ~(1 << MFM_BSER_ENA);
 }
 
 volatile AFERegs * AFERegPtr(){
@@ -121,7 +117,7 @@ void MFMRefreshCoeffs(){
         regs->MFM.dac_coeff_hi = coeff >> 32;
         regs->MFM.dac_coeff_low= coeff;
     } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL){
-        uint64_t coeff = (1. / (IternalAFEData.coeffAB * IternalAFEData.coeffBD));
+        uint64_t coeff = (1. / (IternalAFEData.coeffAB / IternalAFEData.coeffBD));
         regs->MFM.bser_step_hi = coeff >> 32;
         regs->MFM.bser_step_low= coeff;
     } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
@@ -181,10 +177,8 @@ int AFEEvent(uint32_t event, void*){
     }
     if(event == controlZeroEv()){
         MFMSetZeroIntegral();
-        if(IternalAFEData.B0 != controlB0()){
-            IternalAFEData.B0 = controlB0();
-            MFMRefreshOffset();
-        }
+        IternalAFEData.B0 = controlB0();
+        MFMRefreshOffset();
     }
     if(event == controlCalEv()){
         MFMSetCalibration();
@@ -209,6 +203,7 @@ int AFEDDS_SYNC(void*){
     if(IternalAFEData.mode != controlMode()){
         IternalAFEData.mode = controlMode();
         MFMRefreshMode();
+        MFMRefreshCoeffs();
     }
     if(IternalAFEData.coeffAB != controlCoeffAB()){
         IternalAFEData.coeffAB = controlCoeffAB();

@@ -99,13 +99,14 @@ void logg(logEntry e){
         return;
     }
     if(bankCnt[activeBank] == 0){
-        if(regs->bankRegs[activeBank].size >= BANK_MAX_SIZE){
+        e.desc = integratorCfgConvert(regs->bankRegs[activeBank].cfg);
+        uint32_t sz = logEntrySize(e.desc);
+        if(regs->bankRegs[activeBank].size + sz >= BANK_MAX_SIZE){
             statusLogOverflow();
             return;
         }
-        e.desc = integratorCfgConvert(regs->bankRegs[activeBank].cfg);
         writeEntry(e, bankAddrs[activeBank] + regs->bankRegs[activeBank].size);
-        regs->bankRegs[activeBank].size += logEntrySize(e.desc);
+        regs->bankRegs[activeBank].size += sz;
         bankCnt[activeBank] = regs->bankRegs[activeBank].dcm;
     } else {
         bankCnt[activeBank] --;

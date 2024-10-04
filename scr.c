@@ -119,6 +119,17 @@ void statusAFECallibration(){
     #endif
 }
 
+void statusAFEState(uint32_t AFEState){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    regs->AFE_ERR = regs->AFE_ERR & ~(0b111 << AFE_ERR_STATE) | AFEState << AFE_ERR_STATE;
+    flushIfnTEST();
+    #ifdef DEBUG
+    if(AFEState != 0){
+        TM_PRINTF("DEBUG: AFE: state = %x\n\r", AFEState);
+    }
+    #endif
+}
+
 void statusLogStartStop(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_STARTSTOP;

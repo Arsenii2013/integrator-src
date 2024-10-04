@@ -35,6 +35,7 @@ typedef struct
 #define AFE_ERR_STARTSTOP   1
 #define AFE_ERR_STOPSTOP    2
 #define AFE_ERR_STARTSTART  3
+#define AFE_ERR_STATE       4
 
 #define LOG_ERR_SWITCH      0
 #define LOG_ERR_STARTSTOP   1
@@ -50,6 +51,7 @@ void statusAFEStartStop();
 void statusAFEStopStop();
 void statusAFEStartStart();
 void statusAFECallibration();
+void statusAFEState(uint32_t AFEState);
 
 void statusLogStartStop();
 void statusLogStopStop();

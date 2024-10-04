@@ -8,13 +8,14 @@ struct{
     uint32_t calibration;
     uint32_t calibration_ready;
     uint32_t operation;
+    uint32_t change_in_that_DDS_SYNC;
     float B0;
     float coeffAB;
     float coeffDB;
     float coeffBA;
     float coeffBD;
     uint32_t mode;
-} IternalAFEData = {0, 0, 1, 0., 0., 0, 0, 0, MFM_MODE_ANALOG_TO_ANALOG};
+} IternalAFEData = {0, 0, 1, 0, 0., 0., 0, 0, 0, MFM_MODE_ANALOG_TO_ANALOG};
 
 void MFMPrintRegs(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
@@ -41,6 +42,7 @@ void MFMStartIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_OPERATION;
     IternalAFEData.operation = 1;
+    IternalAFEData.change_in_that_DDS_SYNC = 1;
     MFMSetBser();
     #ifdef DEBUG
     TM_PRINTF("DEBUG: start integral\n\r");
@@ -52,6 +54,7 @@ void MFMStopIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_OPERATION);
     IternalAFEData.operation = 0;
+    IternalAFEData.change_in_that_DDS_SYNC = 1;
     MFMResetBser();
     #ifdef DEBUG
     TM_PRINTF("DEBUG: stop integral\n\r");
@@ -162,32 +165,61 @@ void MFMRefreshMode(){
     regs->MFM.bser_ctrl_reg = Bser_ctrl;
 }
 
-// TODO errors such as start stop and readback AFE stat reg
 int AFEEvent(uint32_t event, void*){
     if(event == 0){
         return 0;
     }
     for(uint32_t i = 0; i < 4; i++){
         if(event == controlStartEv(i)){
-            MFMStartIntegral();
+            if(!IternalAFEData.calibration_ready){
+                statusAFECallibration();
+            } else if(IternalAFEData.operation) {
+                statusAFEStartStart();
+            } else {
+                if(IternalAFEData.change_in_that_DDS_SYNC){
+                    statusAFEStartStop();
+                }
+                MFMStartIntegral();
+            }
         }
         if(event == controlStopEv(i)){
+            if(!IternalAFEData.calibration_ready){
+                statusAFECallibration();
+            } else if(!IternalAFEData.operation) {
+                statusAFEStopStop();
+            } else {
+                if(IternalAFEData.change_in_that_DDS_SYNC){
+                    statusAFEStartStop();
+                }
+                MFMStopIntegral();
+            }
             MFMStopIntegral();
         }
     }
     if(event == controlZeroEv()){
-        MFMSetZeroIntegral();
-        IternalAFEData.B0 = controlB0();
-        MFMRefreshOffset();
+        if(!IternalAFEData.calibration_ready){
+            statusAFECallibration();
+        } else {
+            MFMSetZeroIntegral();
+            IternalAFEData.B0 = controlB0();
+            MFMRefreshOffset();
+        }
     }
     if(event == controlCalEv()){
-        MFMSetCalibration();
+        if(!IternalAFEData.calibration_ready){
+            statusAFECallibration();
+        } else {
+            MFMSetCalibration();
+        }
     }
     return 0;
 }
 
 int AFEDDS_SYNC(void*){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    IternalAFEData.change_in_that_DDS_SYNC = 0;
+    statusAFEState(regs->MFM.stat_reg >> 1);
+
     if(IternalAFEData.zero){
         MFMResetZeroIntegral();
     }
@@ -288,10 +320,15 @@ void AFEInit(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->ctrl_reg = 0;
     regs->MFM.ctrl_reg = 0;
+    regs->MFM.bser_ctrl_reg = 0;
+    regs->MFM.dac_ctrl_reg = 0;
     MFMRefreshMode();
     MFMRefreshCoeffs();
     MFMRefreshOffset();
     MFMResetBser();
+    MFMSetZeroIntegral();
+    regs->MFM.bser_pulse_duration = 100;
+    regs->MFM.bser_pause_duration = 200;
     #ifdef DEBUG
     MFMPrintRegs();
     #endif

@@ -116,7 +116,7 @@ void MFMRefreshCoeffs(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
 
     if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG){
-        uint64_t coeff = (1. / (IternalAFEData.coeffAB * IternalAFEData.coeffBA));
+        uint64_t coeff = (1. / (IternalAFEData.coeffAB * IternalAFEData.coeffBA)) - 1;
         regs->MFM.dac_coeff_hi = coeff >> 32;
         regs->MFM.dac_coeff_low= coeff;
     } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL){
@@ -124,11 +124,11 @@ void MFMRefreshCoeffs(){
         regs->MFM.bser_step_hi = coeff >> 32;
         regs->MFM.bser_step_low= coeff;
     } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
-        uint64_t coeff = IternalAFEData.coeffDB * IternalAFEData.coeffBA;
+        uint64_t coeff = (1. / (IternalAFEData.coeffDB * IternalAFEData.coeffBA)) - 1;
         regs->MFM.dac_coeff_hi = coeff >> 32;
         regs->MFM.dac_coeff_low= coeff;
     } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_DIGITAL){
-        uint64_t coeff = IternalAFEData.coeffDB * IternalAFEData.coeffBD;
+        uint64_t coeff = (IternalAFEData.coeffBD / IternalAFEData.coeffDB);
         regs->MFM.bser_step_hi = coeff >> 32;
         regs->MFM.bser_step_low= coeff;
     }
@@ -137,10 +137,12 @@ void MFMRefreshCoeffs(){
 void MFMRefreshOffset(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
 
-    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG)
+    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG){
         regs->MFM.dac_offset = IternalAFEData.B0 * IternalAFEData.coeffBA;
-    if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG)
-        regs->MFM.dac_offset = IternalAFEData.B0 / (IternalAFEData.coeffDB * IternalAFEData.coeffBA);
+    }
+    if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
+        regs->MFM.dac_offset = IternalAFEData.B0 * IternalAFEData.coeffBA;
+    }
 }
 
 void MFMRefreshMode(){
@@ -157,7 +159,7 @@ void MFMRefreshMode(){
     } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
         DAC_ctrl |= MFM_SOURCE_BSER;
         Bser_ctrl|= MFM_SOURCE_ZERO;
-    } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG){
+    } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_DIGITAL){
         DAC_ctrl |= MFM_SOURCE_ZERO;
         Bser_ctrl|= MFM_SOURCE_BSER;
     }

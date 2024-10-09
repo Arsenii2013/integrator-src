@@ -51,8 +51,9 @@ int DDS_SYNCApp(void*){
         float B = MFMGetB();
         int64_t intergral = MFMGetIntegral();
         int32_t ADC = MFMGetADC();
+        uint32_t DAC = MFMGetDAC();
 
-        logIntegrator e = {.B = *(uint32_t *)&B, .ADC = ADC, .integral_low = intergral, .integral_high = intergral >> 32};
+        logIntegrator e = {.B = *(uint32_t *)&B, .ADC = ADC, .DAC = DAC, .integral_low = intergral, .integral_high = intergral >> 32};
         //TM_PRINTF("%x, %x, %x, %x\n\r", e.B, e.ADC, e.integral_low, e.integral_high);
         logg(*(logEntry *) &e);
     }

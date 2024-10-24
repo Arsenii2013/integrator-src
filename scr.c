@@ -12,7 +12,7 @@ void initSCR(){
         statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     #endif
     REGS_BASE_SCR->SR = 0;
-    REGS_BASE_SCR->CR = 1 << AFE_PWR;
+    REGS_BASE_SCR->CR = 1 << CR_AFE_PWR;
     REGS_BASE_SCR->CR_S = 0;
     REGS_BASE_SCR->CR_C = 0;
     REGS_BASE_SCR->AFE_ERR = 0;
@@ -181,7 +181,17 @@ void statusLogOverflow(){
 
 uint32_t controlAFEPwr(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->CR && (1 << AFE_PWR);
+    return regs->CR & (1 << CR_AFE_PWR);
+}
+
+uint32_t controlExtTrig(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->CR & (1 << CR_EXT);
+}
+
+void statusExtTrig(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    regs->CR &= ~(1 << CR_EXT);
 }
 
 uint32_t controlStartEv(uint32_t i){

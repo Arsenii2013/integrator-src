@@ -29,7 +29,8 @@ typedef struct
 #define SR_INVALID    2
 
 #define CR_CLEAR      0
-#define AFE_PWR       1
+#define CR_AFE_PWR    1
+#define CR_EXT        2
 
 #define AFE_ERR_CALIBRATION 0
 #define AFE_ERR_STARTSTOP   1
@@ -74,6 +75,9 @@ float controlCoeffBA();
 float controlBserOut();
 
 uint32_t controlMode();
+
+uint32_t controlExtTrig();
+void statusExtTrig();
 
 void initSCR();
 volatile statusControlRegisters * SCRegPtr();

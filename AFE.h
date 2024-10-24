@@ -1,7 +1,6 @@
 #ifndef _AFE_H_
 #define _AFE_H_
 #include "main.h"
-#include "scr.h"
 
 typedef struct{
     uint32_t dds_freq;
@@ -17,7 +16,16 @@ typedef struct{
 
 typedef struct{
     uint32_t ctrl_reg;
-    uint32_t nope_0[15];
+    uint32_t dac_ctrl_reg;
+    uint32_t dac_coeff_hi;
+    uint32_t dac_coeff_low;
+    uint32_t dac_offset;
+    uint32_t bser_ctrl_reg;
+    uint32_t bser_step_hi;
+    uint32_t bser_step_low;
+    uint32_t bser_pulse_duration;
+    uint32_t bser_pause_duration;
+    uint32_t nope_0[6];
     uint32_t stat_reg;
     uint32_t mf_ana_i_hi;
     uint32_t mf_ana_i_low;
@@ -29,6 +37,7 @@ typedef struct{
     uint32_t adc_cal_offset;
     uint32_t last_cal_adc_data;
     uint32_t last_raw_adc_data;
+    uint32_t dac_signal;
 } MFMRegs;
 
 typedef struct{
@@ -58,28 +67,23 @@ typedef struct{
 #define MFM_CTRL_BREF_ENA   3
 #define MFM_CTRL_INT_SYNC   4
 
-#define MFM_STAT_CALIBRATION 0
-
-#define CALIBRATION_TIME 50
+#define MFM_STAT_CALIBRATION_READY 0
 
 #define MFM_MODE_ANALOG_TO_ANALOG   0
 #define MFM_MODE_ANALOG_TO_DIGITAL  1
 #define MFM_MODE_DIGITAL_TO_ANALOG  2
 #define MFM_MODE_DIGITAL_TO_DIGITAL 3
 
-void MFMStartIntegral();
-void MFMStopIntegral();
-void MFMResetIntegral();
-void MFMStartCalibration();
-void MFMSetB0(uint32_t B0);
-void MFMSetATOA(uint32_t coeff);
-void MFMSetATOD(uint32_t coeff);
-void MFMSetDTOA(uint32_t coeff);
-void MFMSetMode(int new_mode);
+#define MFM_SOURCE_ZERO   0
+#define MFM_SOURCE_ANALOG 1
+#define MFM_SOURCE_BSER   2
+#define MFM_SOURCE_TEST   3
+#define MFM_BSER_ENA      2
+
 int64_t MFMGetIntegral();
 float MFMGetB();
 int32_t MFMGetADC();
-int32_t MFMGetDAC();
+uint32_t MFMGetDAC();
 
 int AFEDDS_SYNC(void*);
 int AFEEvent(uint32_t event, void*);

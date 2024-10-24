@@ -33,9 +33,9 @@ int AFEEmulDDS_SYNC(void *){
     }
 
     if(regs->MFM.ctrl_reg & (1 << MFM_CTRL_CALIBRATON)){
-        regs->MFM.stat_reg &= ~(1 << MFM_STAT_CALIBRATION);
+        regs->MFM.stat_reg &= ~(1 << MFM_STAT_CALIBRATION_READY);
     } else {
-        regs->MFM.stat_reg |= (1 << MFM_STAT_CALIBRATION);
+        regs->MFM.stat_reg |= (1 << MFM_STAT_CALIBRATION_READY);
     }
     return 0;
 }

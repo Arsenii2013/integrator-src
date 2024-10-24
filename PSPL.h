@@ -19,5 +19,6 @@ void waitDDS_SYNC(uint32_t timeout);
 uint32_t readEvent();
 uint32_t readEvents(cyclicBuffer * buff);
 void clearEvents();
-int AFEPwr();
+int AFEPwrOn();
+int AFEPwrOff();
 #endif // _PSPL_H_

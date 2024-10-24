@@ -44,7 +44,7 @@ void loggerInit(){
     REGS_BASE_LOG    = malloc(sizeof(logRegs));
     #endif
 
-    const logRegs defaults = {.SR = 1 << SR_IDLE, .CR = 0, .CR_S = 0, .CR_C = 0, .CFG = 7, .DCM = 0, .START = {15, 0}, .STOP = {0, 0},
+    const logRegs defaults = {.SR = 1 << SR_IDLE, .CR = 0, .CR_S = 0, .CR_C = 0, .CFG = 0, .DCM = 0, .START = {0, 0}, .STOP = {0, 0},
          .bankRegs[0] = {.cfg = 0, .dcm = 0, .size = 0}, .bankRegs[1] = {.cfg = 0, .dcm = 0, .size = 0},
     };
 
@@ -65,7 +65,7 @@ size_t writeEntry(logEntry e, void * addr){
         }
     }
     #ifndef TEST
-    Xil_DCacheFlushRange((intptr_t)addr, writed*4);
+    //Xil_DCacheFlushRange((intptr_t)addr, writed*4);
     #endif
     return writed;
 }
@@ -99,13 +99,14 @@ void logg(logEntry e){
         return;
     }
     if(bankCnt[activeBank] == 0){
-        if(regs->bankRegs[activeBank].size >= BANK_MAX_SIZE){
+        e.desc = integratorCfgConvert(regs->bankRegs[activeBank].cfg);
+        uint32_t sz = logEntrySize(e.desc);
+        if(regs->bankRegs[activeBank].size + sz >= BANK_MAX_SIZE){
             statusLogOverflow();
             return;
         }
-        e.desc = integratorCfgConvert(regs->bankRegs[activeBank].cfg);
         writeEntry(e, bankAddrs[activeBank] + regs->bankRegs[activeBank].size);
-        regs->bankRegs[activeBank].size += logEntrySize(e.desc);
+        regs->bankRegs[activeBank].size += sz;
         bankCnt[activeBank] = regs->bankRegs[activeBank].dcm;
     } else {
         bankCnt[activeBank] --;
@@ -137,6 +138,8 @@ int loggerDDS_SYNC(void*){
             regs->SR |= (1 << SR_IDLE);
             if(CRSwitch){
                 regs->SR   ^= (1 << SR_BANK);
+                switchLog  = 0; 
+                regs->CR   &= ~(1 << CR_SWITCH);
             }
         }
         if(CRStart){
@@ -157,10 +160,9 @@ int loggerDDS_SYNC(void*){
     }
 
 
-    regs->CR   &= ~((1 << CR_START) | (1 << CR_STOP) | (1 << CR_SWITCH));
+    regs->CR   &= ~((1 << CR_START) | (1 << CR_STOP));
     startLog = 0;
     stopLog  = 0;
-    switchLog= 0; 
     return 0;
 }
 

@@ -2,6 +2,7 @@
 #define _SCR_H_
 #include "main.h"
 
+#define SCR_EVENTS_N 4
 typedef struct
 {
     uint32_t SR;
@@ -11,17 +12,16 @@ typedef struct
     uint32_t AFE_ERR;
     uint32_t LOG_ERR;
     uint32_t HP_ERR;
-    uint32_t B0;
-    uint32_t B0_EV;
-    uint32_t START_EV;
-    uint32_t STOP_EV;
-    uint32_t RESET_EV;
-    uint32_t CALIBRATION_EV;
     uint32_t MODE;
+    uint32_t B0;
     uint32_t K_ANALOG_TO_B;
-    uint32_t K_DIGITAL_TO_B;
+    uint32_t BSER_IN;
     uint32_t K_B_TO_ANALOG;
-    uint32_t K_B_SERIES;
+    uint32_t BSER_OUT;
+    uint32_t START_EV[SCR_EVENTS_N];
+    uint32_t STOP_EV[SCR_EVENTS_N];
+    uint32_t ZERO_EV;
+    uint32_t CALIBRATION_EV;
 } statusControlRegisters;
 
 #define SR_TIME       0
@@ -29,11 +29,13 @@ typedef struct
 #define SR_INVALID    2
 
 #define CR_CLEAR      0
+#define AFE_PWR       1
 
 #define AFE_ERR_CALIBRATION 0
 #define AFE_ERR_STARTSTOP   1
 #define AFE_ERR_STOPSTOP    2
 #define AFE_ERR_STARTSTART  3
+#define AFE_ERR_STATE       4
 
 #define LOG_ERR_SWITCH      0
 #define LOG_ERR_STARTSTOP   1
@@ -49,6 +51,7 @@ void statusAFEStartStop();
 void statusAFEStopStop();
 void statusAFEStartStart();
 void statusAFECallibration();
+void statusAFEState(uint32_t AFEState);
 
 void statusLogStartStop();
 void statusLogStopStop();
@@ -58,18 +61,17 @@ void statusLogOverflow();
 
 int controlDDS_SYNC(void*);
 
-uint32_t controlB0();
-uint32_t controlB0Ev();
-uint32_t controlStartEv();
-uint32_t controlStopEv();
-uint32_t controlResetEv();
+uint32_t controlStartEv(uint32_t i);
+uint32_t controlStopEv(uint32_t i);
+uint32_t controlZeroEv();
 uint32_t controlCalEv();
+uint32_t controlAFEPwr();
 
-
-float controlKoeffAB();
-uint32_t controlKoeffDB();
-uint32_t controlKoeffBA();
-uint32_t controlBSeries();
+float controlB0();
+float controlCoeffAB();
+float controlBserIn();
+float controlCoeffBA();
+float controlBserOut();
 
 uint32_t controlMode();
 

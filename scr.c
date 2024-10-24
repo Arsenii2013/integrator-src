@@ -76,6 +76,12 @@ void statusInvalidEvents(){
 
 int controlDDS_SYNC(void*){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    
+    regs->CR |= regs->CR_S;
+    regs->CR &= ~regs->CR_C;
+    regs->CR_S = 0;
+    regs->CR_C = 0;
+
     if(regs->CR & 0x1){
         regs->CR &= ~0x1;
         regs->SR = 0;

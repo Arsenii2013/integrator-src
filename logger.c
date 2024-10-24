@@ -44,7 +44,7 @@ void loggerInit(){
     REGS_BASE_LOG    = malloc(sizeof(logRegs));
     #endif
 
-    const logRegs defaults = {.SR = 1 << SR_IDLE, .CR = 0, .CR_S = 0, .CR_C = 0, .CFG = 7, .DCM = 0, .START = {15, 0}, .STOP = {0, 0},
+    const logRegs defaults = {.SR = 1 << SR_IDLE, .CR = 0, .CR_S = 0, .CR_C = 0, .CFG = 0, .DCM = 0, .START = {0, 0}, .STOP = {0, 0},
          .bankRegs[0] = {.cfg = 0, .dcm = 0, .size = 0}, .bankRegs[1] = {.cfg = 0, .dcm = 0, .size = 0},
     };
 
@@ -65,7 +65,7 @@ size_t writeEntry(logEntry e, void * addr){
         }
     }
     #ifndef TEST
-    Xil_DCacheFlushRange((intptr_t)addr, writed*4);
+    //Xil_DCacheFlushRange((intptr_t)addr, writed*4);
     #endif
     return writed;
 }

@@ -21,4 +21,6 @@ uint32_t readEvents(cyclicBuffer * buff);
 void clearEvents();
 int AFEPwrOn();
 int AFEPwrOff();
+
+void externalStart();
 #endif // _PSPL_H_

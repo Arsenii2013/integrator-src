@@ -143,6 +143,9 @@ void MFMRefreshOffset(){
     if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
         regs->MFM.dac_offset = IternalAFEData.B0 * IternalAFEData.coeffBA;
     }
+    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL || IternalAFEData.mode == MFM_MODE_DIGITAL_TO_DIGITAL){
+        regs->MFM.dac_offset = 0;
+    }
 }
 
 void MFMRefreshMode(){

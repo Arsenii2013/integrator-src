@@ -13,6 +13,7 @@ typedef struct
     uint32_t LOG_ERR;
     uint32_t HP_ERR;
     uint32_t MODE;
+    uint32_t EXT;
     uint32_t B0;
     uint32_t K_ANALOG_TO_B;
     uint32_t BSER_IN;
@@ -30,7 +31,11 @@ typedef struct
 
 #define CR_CLEAR      0
 #define CR_AFE_PWR    1
-#define CR_EXT        2
+
+#define EXT_EXT       0
+#define EXT_CYCLE_CAL 1
+#define EXT_CAL       2
+#define EXT_SOFT      3
 
 #define AFE_ERR_CALIBRATION 0
 #define AFE_ERR_STARTSTOP   1
@@ -77,7 +82,9 @@ float controlBserOut();
 uint32_t controlMode();
 
 uint32_t controlExtTrig();
-void statusExtTrig();
+uint32_t controlExtTrigCycCal();
+uint32_t controlExtTrigCal();
+uint32_t controlExtTrigSoft();
 
 void initSCR();
 volatile statusControlRegisters * SCRegPtr();

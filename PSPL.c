@@ -69,14 +69,7 @@ uint32_t readEvent(){
 uint32_t readEvents(cyclicBuffer * buff){
     uint32_t i = 0;
     while(!(*((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + SR)) & 0x1)){
-        if(buff->size < FIFO_SIZE){
-            buff->data[(buff->start + buff->size) % FIFO_SIZE] = *((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
-            buff->size++;
-        }else{
-            statusOverflowEvents();
-            //volatile uint32_t rd = *((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
-            (void)*((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
-        }
+        cyclicBufferInsert(buff, *((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA)));
         i++;
     }
     return i;

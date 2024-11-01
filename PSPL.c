@@ -5,7 +5,7 @@
 #define DDS_SYNC_PIN    EMIO_0_PIN
 #define BUSY_PIN        EMIO_0_PIN + 1
 #define AFE_PWR_PIN     EMIO_0_PIN + 2
-#define EXT_RST_PIN     EMIO_0_PIN + 3
+#define EXT_STRT_PIN    EMIO_0_PIN + 3
 #define GP0_START       0x40000000
 
 #define CR              0x1
@@ -110,10 +110,8 @@ void clearEvents(){
     return;
 }
 
-void externalStart(){
+uint32_t externalStart(){
     #ifndef TEST
-    XGpioPs_WritePin(&bank2, EXT_RST_PIN, 1);
-    for(int i = 0; i < 666; i ++){};
-    XGpioPs_WritePin(&bank2, EXT_RST_PIN, 0);
+    return XGpioPs_ReadPin(&bank2, EXT_STRT_PIN);
     #endif
 }

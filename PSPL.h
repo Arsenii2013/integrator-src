@@ -14,5 +14,6 @@ void clearEvents();
 int AFEPwrOn();
 int AFEPwrOff();
 
-void externalStart();
+uint32_t externalStart();
+
 #endif // _PSPL_H_

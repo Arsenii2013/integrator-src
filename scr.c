@@ -203,10 +203,19 @@ uint32_t controlExtTrigCal(){
 
 uint32_t controlExtTrigSoft(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    uint32_t res = regs->EXT & (1 << EXT_SOFT);
-    if(res) 
-        regs->EXT &= ~(1 << EXT_SOFT);
-    return res;
+    return regs->EXT & (1 << EXT_SOFT);
+}
+
+void statusExtTrigSoft(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    regs->EXT &= ~(1 << EXT_SOFT);
+    flushIfnTEST();
+}
+
+void statusExtTrigCal(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    regs->EXT &= ~(1 << EXT_CAL);
+    flushIfnTEST();
 }
 
 uint32_t controlStartEv(uint32_t i){

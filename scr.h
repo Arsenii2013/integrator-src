@@ -85,6 +85,8 @@ uint32_t controlExtTrig();
 uint32_t controlExtTrigCycCal();
 uint32_t controlExtTrigCal();
 uint32_t controlExtTrigSoft();
+void statusExtTrigSoft();
+void statusExtTrigCal();
 
 void initSCR();
 volatile statusControlRegisters * SCRegPtr();

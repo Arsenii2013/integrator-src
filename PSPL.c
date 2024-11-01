@@ -5,6 +5,7 @@
 #define DDS_SYNC_PIN    EMIO_0_PIN
 #define BUSY_PIN        EMIO_0_PIN + 1
 #define AFE_PWR_PIN     EMIO_0_PIN + 2
+#define EXT_STRT_PIN    EMIO_0_PIN + 3
 #define GP0_START       0x40000000
 
 #define CR              0x1
@@ -68,14 +69,7 @@ uint32_t readEvent(){
 uint32_t readEvents(cyclicBuffer * buff){
     uint32_t i = 0;
     while(!(*((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + SR)) & 0x1)){
-        if(buff->size < FIFO_SIZE){
-            buff->data[(buff->start + buff->size) % FIFO_SIZE] = *((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
-            buff->size++;
-        }else{
-            statusOverflowEvents();
-            //volatile uint32_t rd = *((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
-            (void)*((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
-        }
+        cyclicBufferInsert(buff, *((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA)));
         i++;
     }
     return i;
@@ -108,11 +102,16 @@ void clearDDS_SYNC(cyclicBuffer * buff){
     }
 }
 
-
 void clearEvents(){
     while(!(*((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + SR)) & 0x1)){
         //volatile uint32_t rd = *((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
         (void)*((volatile uint32_t *) (GP0_START + EVENT_FIFO_OFFS + DATA));
     }
     return;
+}
+
+uint32_t externalStart(){
+    #ifndef TEST
+    return XGpioPs_ReadPin(&bank2, EXT_STRT_PIN);
+    #endif
 }

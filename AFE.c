@@ -1,5 +1,7 @@
 #include "AFE.h"
 #include "scr.h"
+#include "ext_trig.h"
+#include "ev_seq.h"
 
 volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x40001800;
 //volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x10000000;
@@ -174,34 +176,48 @@ int AFEEvent(uint32_t event, void*){
     if(event == 0){
         return 0;
     }
-    for(uint32_t i = 0; i < 4; i++){
-        if(event == controlStartEv(i)){
-            if(!IternalAFEData.calibration_ready){
-                statusAFECallibration();
-            } else if(IternalAFEData.operation) {
-                statusAFEStartStart();
-            } else {
-                if(IternalAFEData.change_in_that_DDS_SYNC){
-                    statusAFEStartStop();
-                }
-                MFMStartIntegral();
-            }
+    uint32_t trig_mode = trigEvSource();
+    uint32_t start, stop, zero, cal;
+    if(trig_mode == TRIG_EVENT){
+        for(uint32_t i = 0; i < 4 && !start; i++){
+            start = event == controlStartEv(i);
         }
-        if(event == controlStopEv(i)){
-            if(!IternalAFEData.calibration_ready){
-                statusAFECallibration();
-            } else if(!IternalAFEData.operation) {
-                statusAFEStopStop();
-            } else {
-                if(IternalAFEData.change_in_that_DDS_SYNC){
-                    statusAFEStartStop();
-                }
-                MFMStopIntegral();
+        for(uint32_t i = 0; i < 4 && !stop; i++){
+            stop = event == controlStopEv(i);
+        }
+        zero = event == controlZeroEv();
+        cal = event == controlCalEv();
+    } else if(trig_mode == TRIG_EXTERNAL){
+        start = event == EV_INT_START;
+        stop  = event == EV_INT_STOP;
+        zero  = event == EV_INT_ZERO;
+        cal   = event == EV_INT_CAL;
+    }
+    if(start){
+        if(!IternalAFEData.calibration_ready){
+            statusAFECallibration();
+        } else if(IternalAFEData.operation) {
+            statusAFEStartStart();
+        } else {
+            if(IternalAFEData.change_in_that_DDS_SYNC){
+                statusAFEStartStop();
+            }
+            MFMStartIntegral();
+        }
+    }
+    if(stop){
+        if(!IternalAFEData.calibration_ready){
+            statusAFECallibration();
+        } else if(!IternalAFEData.operation) {
+            statusAFEStopStop();
+        } else {
+            if(IternalAFEData.change_in_that_DDS_SYNC){
+                statusAFEStartStop();
             }
             MFMStopIntegral();
         }
     }
-    if(event == controlZeroEv()){
+    if(zero){
         if(!IternalAFEData.calibration_ready){
             statusAFECallibration();
         } else {
@@ -210,11 +226,16 @@ int AFEEvent(uint32_t event, void*){
             MFMRefreshOffset();
         }
     }
-    if(event == controlCalEv()){
+    if(cal){
+        TM_PRINTF("cal\n\r");
         if(!IternalAFEData.calibration_ready){
             statusAFECallibration();
         } else {
-            MFMSetCalibration();
+            if(IternalAFEData.operation){
+                statusAFECallibration();
+            } else {
+                MFMSetCalibration();
+            }
         }
     }
     return 0;
@@ -337,4 +358,8 @@ void AFEInit(){
     #ifdef DEBUG
     MFMPrintRegs();
     #endif
+}
+
+uint32_t AFERunning(){
+    return IternalAFEData.operation;
 }

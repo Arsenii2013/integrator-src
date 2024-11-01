@@ -12,7 +12,7 @@ void initSCR(){
         statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     #endif
     REGS_BASE_SCR->SR = 0;
-    REGS_BASE_SCR->CR = 1 << AFE_PWR;
+    REGS_BASE_SCR->CR = 1 << CR_AFE_PWR;
     REGS_BASE_SCR->CR_S = 0;
     REGS_BASE_SCR->CR_C = 0;
     REGS_BASE_SCR->AFE_ERR = 0;
@@ -30,6 +30,7 @@ void initSCR(){
     REGS_BASE_SCR->ZERO_EV = 0;
     REGS_BASE_SCR->CALIBRATION_EV = 0;
     REGS_BASE_SCR->MODE = 0;
+    REGS_BASE_SCR->EXT = 1 << EXT_CYCLE_CAL;
     REGS_BASE_SCR->K_ANALOG_TO_B = 0;
     REGS_BASE_SCR->BSER_IN = 0;
     REGS_BASE_SCR->K_B_TO_ANALOG = 0;
@@ -127,7 +128,7 @@ void statusAFECallibration(){
 
 void statusAFEState(uint32_t AFEState){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    regs->AFE_ERR = regs->AFE_ERR & ~(0b111 << AFE_ERR_STATE) | AFEState << AFE_ERR_STATE;
+    regs->AFE_ERR = (regs->AFE_ERR & ~(0b111 << AFE_ERR_STATE)) | AFEState << AFE_ERR_STATE;
     flushIfnTEST();
     #ifdef DEBUG
     if(AFEState != 0){
@@ -181,7 +182,40 @@ void statusLogOverflow(){
 
 uint32_t controlAFEPwr(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->CR && (1 << AFE_PWR);
+    return regs->CR & (1 << CR_AFE_PWR);
+}
+
+uint32_t controlExtTrig(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    uint32_t res = regs->EXT & (1 << EXT_EXT);
+    return res;
+}
+
+uint32_t controlExtTrigCycCal(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->EXT & (1 << EXT_CYCLE_CAL);
+}
+
+uint32_t controlExtTrigCal(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->EXT & (1 << EXT_CAL);
+}
+
+uint32_t controlExtTrigSoft(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->EXT & (1 << EXT_SOFT);
+}
+
+void statusExtTrigSoft(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    regs->EXT &= ~(1 << EXT_SOFT);
+    flushIfnTEST();
+}
+
+void statusExtTrigCal(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    regs->EXT &= ~(1 << EXT_CAL);
+    flushIfnTEST();
 }
 
 uint32_t controlStartEv(uint32_t i){

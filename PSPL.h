@@ -1,15 +1,7 @@
 #ifndef _PSPL_H
 #define _PSPL_H_
 #include "main.h"
-
-#define FIFO_SIZE       2024
-
-typedef struct 
-{
-    uint32_t data[FIFO_SIZE];
-    uint32_t start;
-    uint32_t size;
-} cyclicBuffer;
+#include "cycle_buff.h"
 
 uint32_t findLastDDS_SYNC(cyclicBuffer * buff);
 void clearDDS_SYNC(cyclicBuffer * buff);
@@ -21,4 +13,7 @@ uint32_t readEvents(cyclicBuffer * buff);
 void clearEvents();
 int AFEPwrOn();
 int AFEPwrOff();
+
+uint32_t externalStart();
+
 #endif // _PSPL_H_

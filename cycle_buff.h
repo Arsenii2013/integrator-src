@@ -2,7 +2,7 @@
 #define _CYCLE_BUFF_H_
 #include "main.h"
 
-#define FIFO_SIZE       2024
+#define FIFO_SIZE       32
 typedef struct 
 {
     uint32_t data[FIFO_SIZE];
@@ -11,5 +11,9 @@ typedef struct
 } cyclicBuffer;
 
 int cyclicBufferInsert(cyclicBuffer * buff, uint32_t data);
+int cyclicBufferEmpty(cyclicBuffer * buff);
+int cyclicBufferFull(cyclicBuffer * buff);
+uint32_t cyclicBufferRead(cyclicBuffer * buff);
+uint32_t cyclicBufferReadUntillLast(cyclicBuffer * c_buff, uint32_t buff [FIFO_SIZE], uint32_t word);
 
 #endif// _CYCLE_BUFF_H_

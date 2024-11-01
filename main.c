@@ -5,7 +5,10 @@
 //#include "sin_integral_emulator.h"
 #include "AFE.h"
 #include "scr.h"
+#include "PSPL.h"
 #include "AFE_emulator.h"
+#include "ext_trig.h"
+#include "ev_seq.h"
 
 #ifdef TEST
 #include "test_gen.h"
@@ -124,6 +127,7 @@ int rstDDS_SYNC(void*){
 int main()
 {
     cyclicBuffer ev_buff = {.size = 0, .start = 0, .data = {0}};
+    uint32_t     ev_buff_flat [FIFO_SIZE];
     #ifdef TEST
     uint32_t repeat = 0;
 
@@ -149,15 +153,15 @@ int main()
     initSCR();
     loggerInit();
     #ifndef TEST
-    DDS_SYNCCacheFlush(NULL);
+    //DDS_SYNCCacheFlush(NULL);
     #endif
 
     schedulerRecord apps[] = {
-        #ifdef DEBUG
-        {.name="print", .DDS_SYNCCallback=DDS_SYNCPrint, .eventCallback=eventPrint, .appData=NULL}, 
+        #ifndef DEBUG
+        {.name="print", .DDS_SYNCCallback=DDS_SYNCPrint, .eventCallback=eventPrintNZero, .appData=NULL}, 
         #endif
         #ifndef TEST
-        {.name="cacheInv", .DDS_SYNCCallback=DDS_SYNCCacheInvalidate, .eventCallback=NULL, .appData=NULL}, 
+        //{.name="cacheInv", .DDS_SYNCCallback=DDS_SYNCCacheInvalidate, .eventCallback=NULL, .appData=NULL}, 
         #endif
         {.name="control", .DDS_SYNCCallback=controlDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
         //{.name="print", .DDS_SYNCCallback=NULL, .eventCallback=eventPrintNZero, .appData=NULL}, 
@@ -167,9 +171,10 @@ int main()
         //{.name="AFEEmul", .DDS_SYNCCallback=AFEEmulDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
         {.name="app", .DDS_SYNCCallback=DDS_SYNCApp, .eventCallback=eventApp, .appData=NULL}, 
         {.name="AFE", .DDS_SYNCCallback=AFEDDS_SYNC, .eventCallback=AFEEvent, .appData=NULL}, 
+        {.name="ext", .DDS_SYNCCallback=trigDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
         #ifndef TEST
         //{.name="stop", .DDS_SYNCCallback=stopDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
-        {.name="cacheFlush", .DDS_SYNCCallback=DDS_SYNCCacheFlush, .eventCallback=NULL, .appData=NULL}, 
+        //{.name="cacheFlush", .DDS_SYNCCallback=DDS_SYNCCacheFlush, .eventCallback=NULL, .appData=NULL}, 
         #endif
         {.name="",     .DDS_SYNCCallback=NULL,          .eventCallback=NULL,       .appData=NULL}, 
     };
@@ -189,23 +194,32 @@ int main()
         testWaitDDS_SYNC();
         testReadEvents(&ev_buff);
         #else
-        waitDDS_SYNC(0);
-        readEvents(&ev_buff);
+        waitDDS_SYNC(100);
+        
+        uint32_t src = trigEvSource();
+        if(src == TRIG_EVENT){
+            readEvents(&ev_buff);
+        } else if(src == TRIG_EXTERNAL) {
+            seqReadEvents(&ev_buff);
+            clearEvents();
+        }
         #endif
 
-        uint32_t lastDDS_SYNC = findLastDDS_SYNC(&ev_buff);
-        clearDDS_SYNC(&ev_buff);
+        schedulerDDS_SYNC();
 
-        schedulerDDS_SYNC(); // применить установки с прошлого цикла
-        
-        while(ev_buff.start <= lastDDS_SYNC){
-            if(ev_buff.size == 0)
-                break;
-            schedulerEvent(ev_buff.data[ev_buff.start % FIFO_SIZE]);
-            ev_buff.start ++;
-            ev_buff.size --;
+        uint32_t events_untill_sync = cyclicBufferReadUntillLast(&ev_buff, ev_buff_flat, 0x100);
+        uint32_t sync_cnt = 0;
+        //TM_PRINTF("%d\n\r", events_untill_sync);
+        for(uint32_t i = 0; i < events_untill_sync; i++){
+            schedulerEvent(ev_buff_flat[i] & 0xff);
+            if(ev_buff_flat[i] & 0x100){
+                sync_cnt++;
+            }
+        }   
+        if(sync_cnt > 1){
+            statusNotEnoughtTime();
         }
-        ev_buff.start = ev_buff.start % FIFO_SIZE;
+
     }
     printLog();
     

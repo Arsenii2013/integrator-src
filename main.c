@@ -35,11 +35,22 @@ int eventApp(uint32_t ev, void*){
     if(ev == 0){
         return 0;
     }
-    for(int i = 0; i < 4; i++){
-        if(ev == controlStartEv(i)){
+    uint32_t trig_mode = trigEvSource();
+
+    if(trig_mode == TRIG_EVENT){
+        for(int i = 0; i < 4; i++){
+            if(ev == controlStartEv(i)){
+                appRunning = 1;
+            }
+            if(ev == controlStopEv(i)){
+                appRunning = 0;
+            }
+        }
+    } else if(trig_mode == TRIG_EXTERNAL){
+        if(ev == EV_INT_START){
             appRunning = 1;
         }
-        if(ev == controlStopEv(i)){
+        if(ev == EV_INT_STOP){
             appRunning = 0;
         }
     }

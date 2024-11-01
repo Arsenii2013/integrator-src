@@ -1,5 +1,7 @@
 #include "logger.h"
 #include "scr.h"
+#include "ext_trig.h"
+#include "ev_seq.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -173,20 +175,34 @@ int loggerEvent(uint32_t ev, void*){
     }
     uint32_t running = !(regs->SR & (1 << SR_IDLE)); 
 
+    uint32_t trig_mode = trigEvSource();
     
-    for(int i = 0; i < BANK_NUM; i ++){
-        if(ev == regs->STOP[i]){
+    if(trig_mode == TRIG_EVENT){
+        for(int i = 0; i < BANK_NUM; i ++){
+            if(ev == regs->STOP[i]){
+                stopLog = 1; 
+                if((regs->CR >> CR_MODE) & 0b01){
+                    switchLog = 1;
+                }
+            }
+        }
+        for(int i = 0; i < BANK_NUM; i ++){
+            if(ev == regs->START[i]){
+                startLog = 1;
+            }
+        }
+    } else if(trig_mode == TRIG_EXTERNAL){
+        if(ev == EV_LOG_STOP){
             stopLog = 1; 
             if((regs->CR >> CR_MODE) & 0b01){
                 switchLog = 1;
             }
         }
-    }
-    for(int i = 0; i < BANK_NUM; i ++){
-        if(ev == regs->START[i]){
+        if(ev == EV_LOG_START){
             startLog = 1;
         }
     }
+
     return 0;
 }
 

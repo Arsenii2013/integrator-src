@@ -91,4 +91,6 @@ void AFEEmulinit();
 void AFEInit();
 volatile AFERegs * AFERegPtr();
 
+uint32_t AFERunning();
+
 #endif // _AFE_H_

@@ -5,7 +5,7 @@
 #include "PSPL.h"
 #include "ev_seq.h"
 
-struct {
+static struct {
     uint32_t mode;
     uint32_t triggered;
     uint32_t calibration_in_process;

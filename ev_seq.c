@@ -1,7 +1,7 @@
 #include "ev_seq.h"
 
 #define  MAX_SEQ_EVENTS 32
-struct {
+static struct {
     uint32_t N;
     uint32_t events [MAX_SEQ_EVENTS];
     uint32_t delays [MAX_SEQ_EVENTS];

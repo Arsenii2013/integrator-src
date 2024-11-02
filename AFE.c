@@ -3,9 +3,9 @@
 #include "ext_trig.h"
 #include "ev_seq.h"
 
-volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x40001800;
+static volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x40001800;
 //volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x10000000;
-struct{
+static struct{
     uint32_t zero;
     uint32_t calibration;
     uint32_t calibration_ready;

@@ -4,7 +4,7 @@
 #endif
 
 //statusControlRegisters * REGS_BASE_SCR = 0x40000000 + 0x2000;
-volatile statusControlRegisters * REGS_BASE_SCR = (statusControlRegisters *)0x3A001000;
+static volatile statusControlRegisters * REGS_BASE_SCR = (statusControlRegisters *)0x3A001000;
 
 void initSCR(){
     #ifdef TEST

@@ -10,14 +10,14 @@
 #endif
 
 //logRegs * REGS_BASE_LOG = 0x40000000 + 0x1C00;
-volatile logRegs * REGS_BASE_LOG = (logRegs *)0x3A000000;
+static volatile logRegs * REGS_BASE_LOG = (logRegs *)0x3A000000;
 
-uint32_t * bankAddrs [BANK_NUM] = {(uint32_t *)0x00000000, (uint32_t *)0x10000000};
-uint32_t bankCnt [BANK_NUM] = {0, 0};
+static uint32_t * bankAddrs [BANK_NUM] = {(uint32_t *)0x00000000, (uint32_t *)0x10000000};
+static uint32_t bankCnt [BANK_NUM] = {0, 0};
 
-uint32_t startLog = 0;
-uint32_t stopLog = 0;
-uint32_t switchLog = 0;
+static uint32_t startLog = 0;
+static uint32_t stopLog = 0;
+static uint32_t switchLog = 0;
 
 uint32_t logEntrySize(uint32_t desc){
     uint32_t count = 0;

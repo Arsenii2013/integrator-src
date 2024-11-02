@@ -16,7 +16,7 @@
 #define DATA            0x14
 
 #ifndef TEST
-XGpioPs bank2;
+static XGpioPs bank2;
 #endif
 
 void initPStoPL(){

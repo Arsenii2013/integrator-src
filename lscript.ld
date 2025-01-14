@@ -27,6 +27,7 @@ MEMORY
    ps7_qspi_linear_0 : ORIGIN = 0xFC000000, LENGTH = 0x1000000
    ps7_ram_0 : ORIGIN = 0x0, LENGTH = 0x30000
    ps7_ram_1 : ORIGIN = 0xFFFF0000, LENGTH = 0xFE00
+   off  : ORIGIN = 0xFFFFFE00, LENGTH = 0x1000
 }
 
 /* Specify the default entry point to the program */

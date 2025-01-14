@@ -11,8 +11,7 @@ void waitDDS_SYNC(uint32_t timeout);
 uint32_t readEvent();
 uint32_t readEvents(cyclicBuffer * buff);
 void clearEvents();
-int AFEPwrOn();
-int AFEPwrOff();
+uint32_t AFEInitDonePin();
 
 uint32_t externalStart();
 

@@ -4,8 +4,8 @@
 #include "xtime_l.h"
 #endif
 
-schedulerRecord * schedulerInfo = NULL;
-size_t schedulerCnt = 0;
+static schedulerRecord * schedulerInfo = NULL;
+static size_t schedulerCnt = 0;
 
 void schedulerSet(schedulerRecord * app){
     size_t i = 0;

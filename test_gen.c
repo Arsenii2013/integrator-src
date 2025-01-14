@@ -4,14 +4,14 @@
 #ifdef TEST
 #include <time.h>
 
-uint64_t cp;
-uint64_t lostDDS_SYNC;
-uint32_t repeat;
+static uint64_t cp;
+static uint64_t lostDDS_SYNC;
+static uint32_t repeat;
 
 #define  MAX_EVENTS 10
-uint32_t eventsN   = 1;
-uint32_t events [MAX_EVENTS] = {0x12};
-uint64_t cycles [MAX_EVENTS] = {0};
+static uint32_t eventsN   = 1;
+static uint32_t events [MAX_EVENTS] = {0x12};
+static uint64_t cycles [MAX_EVENTS] = {0};
 
 uint64_t micros()
 {

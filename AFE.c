@@ -1,11 +1,13 @@
 #include "AFE.h"
+#include "PSPL.h"
 #include "scr.h"
 #include "ext_trig.h"
 #include "ev_seq.h"
 
-volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x40001800;
+static volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x40001800;
 //volatile AFERegs * REGS_BASE_AFE = (AFERegs *)0x10000000;
-struct{
+static struct{
+    uint32_t inited;
     uint32_t zero;
     uint32_t calibration;
     uint32_t calibration_ready;
@@ -17,7 +19,7 @@ struct{
     float coeffBA;
     float coeffBD;
     uint32_t mode;
-} IternalAFEData = {0, 0, 1, 0, 0., 0., 0, 0, 0, MFM_MODE_ANALOG_TO_ANALOG};
+} IternalAFEData = {0, 0, 0, 1, 0, 0, 0., 0., 0., 0., 0., MFM_MODE_ANALOG_TO_ANALOG};
 
 void MFMPrintRegs(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
@@ -44,7 +46,6 @@ void MFMStartIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_OPERATION;
     IternalAFEData.operation = 1;
-    IternalAFEData.change_in_that_DDS_SYNC = 1;
     MFMSetBser();
     #ifdef DEBUG
     TM_PRINTF("DEBUG: start integral\n\r");
@@ -56,7 +57,6 @@ void MFMStopIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_OPERATION);
     IternalAFEData.operation = 0;
-    IternalAFEData.change_in_that_DDS_SYNC = 1;
     MFMResetBser();
     #ifdef DEBUG
     TM_PRINTF("DEBUG: stop integral\n\r");
@@ -122,7 +122,7 @@ void MFMRefreshCoeffs(){
         regs->MFM.dac_coeff_hi = coeff >> 32;
         regs->MFM.dac_coeff_low= coeff;
     } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL){
-        uint64_t coeff = (1. / (IternalAFEData.coeffAB / IternalAFEData.coeffBD));
+        uint64_t coeff = IternalAFEData.coeffBD / IternalAFEData.coeffAB ;
         regs->MFM.bser_step_hi = coeff >> 32;
         regs->MFM.bser_step_low= coeff;
     } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
@@ -130,7 +130,7 @@ void MFMRefreshCoeffs(){
         regs->MFM.dac_coeff_hi = coeff >> 32;
         regs->MFM.dac_coeff_low= coeff;
     } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_DIGITAL){
-        uint64_t coeff = (IternalAFEData.coeffBD / IternalAFEData.coeffDB);
+        uint64_t coeff = IternalAFEData.coeffBD / IternalAFEData.coeffDB;
         regs->MFM.bser_step_hi = coeff >> 32;
         regs->MFM.bser_step_low= coeff;
     }
@@ -139,10 +139,7 @@ void MFMRefreshCoeffs(){
 void MFMRefreshOffset(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
 
-    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG){
-        regs->MFM.dac_offset = IternalAFEData.B0 * IternalAFEData.coeffBA;
-    }
-    if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
+    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG || IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
         regs->MFM.dac_offset = IternalAFEData.B0 * IternalAFEData.coeffBA;
     }
     if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL || IternalAFEData.mode == MFM_MODE_DIGITAL_TO_DIGITAL){
@@ -176,6 +173,10 @@ int AFEEvent(uint32_t event, void*){
     if(event == 0){
         return 0;
     }
+    if(!IternalAFEData.inited){
+        return 0; //TODO error if event come while AFE dont init
+    }
+    
     uint32_t trig_mode = trigEvSource();
     uint32_t start, stop, zero, cal;
     if(trig_mode == TRIG_EVENT){
@@ -203,6 +204,7 @@ int AFEEvent(uint32_t event, void*){
                 statusAFEStartStop();
             }
             MFMStartIntegral();
+            IternalAFEData.change_in_that_DDS_SYNC = 1;
         }
     }
     if(stop){
@@ -215,6 +217,7 @@ int AFEEvent(uint32_t event, void*){
                 statusAFEStartStop();
             }
             MFMStopIntegral();
+            IternalAFEData.change_in_that_DDS_SYNC = 1;
         }
     }
     if(zero){
@@ -244,6 +247,28 @@ int AFEEvent(uint32_t event, void*){
 int AFEDDS_SYNC(void*){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     IternalAFEData.change_in_that_DDS_SYNC = 0;
+
+    static uint32_t init_delay_enable = 0;
+    static uint32_t init_delay = 0;
+    uint32_t initDone_Pin = AFEInitDonePin();
+    if(!IternalAFEData.inited && initDone_Pin){
+        init_delay_enable = 1;
+    } 
+    if(IternalAFEData.inited && !initDone_Pin){
+        IternalAFEData.inited = 0;
+    }
+    if(init_delay_enable)
+        init_delay ++;
+    if(init_delay == 100000){
+        init_delay = 0;
+        AFEInit();
+        init_delay_enable = 0;
+        IternalAFEData.inited = initDone_Pin;
+    }
+    if(!IternalAFEData.inited){
+        return 0;
+    }
+
     statusAFEState(regs->MFM.stat_reg >> 1);
 
     if(IternalAFEData.zero){
@@ -343,6 +368,7 @@ void AFEEmulinit(){
 }   
 
 void AFEInit(){
+    TM_PRINTF("AFE INIT\n\r");
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->ctrl_reg = 0;
     regs->MFM.ctrl_reg = 0;

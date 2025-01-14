@@ -4,8 +4,10 @@
 #define EMIO_0_PIN      54
 #define DDS_SYNC_PIN    EMIO_0_PIN
 #define BUSY_PIN        EMIO_0_PIN + 1
-#define AFE_PWR_PIN     EMIO_0_PIN + 2
-#define EXT_STRT_PIN    EMIO_0_PIN + 3
+#define EXT_STRT_PIN    EMIO_0_PIN + 2
+#define AFE_CONF_PIN    EMIO_0_PIN + 3
+#define CONF_DONE_PIN   AFE_CONF_PIN + 2
+#define AFE_CFG_MASK    0xFFFFC007
 #define GP0_START       0x40000000
 
 #define CR              0x1
@@ -16,7 +18,7 @@
 #define DATA            0x14
 
 #ifndef TEST
-XGpioPs bank2;
+static XGpioPs bank2;
 #endif
 
 void initPStoPL(){
@@ -24,27 +26,15 @@ void initPStoPL(){
     XGpioPs_Config *conf2 = XGpioPs_LookupConfig(XPAR_PS7_GPIO_0_DEVICE_ID);
     XGpioPs_CfgInitialize(&bank2, conf2, conf2->BaseAddr);
 
-    XGpioPs_SetDirection(&bank2, XGPIOPS_BANK2, 0xffffffff);
-    XGpioPs_SetOutputEnable(&bank2, XGPIOPS_BANK2, 0xffffffff);
+    XGpioPs_SetDirection(&bank2, XGPIOPS_BANK2, AFE_CFG_MASK);
+    XGpioPs_SetOutputEnable(&bank2, XGPIOPS_BANK2, AFE_CFG_MASK);
 
     XGpioPs_Write(&bank2, XGPIOPS_BANK2, 0x00000000);
     #endif
 }
 
-int AFEPwrOn(){
-    #ifndef TEST
-    XGpioPs_SetOutputEnablePin(&bank2, AFE_PWR_PIN, 1);
-    for(int i = 0; i < 100000000; i ++){};
-    return XGpioPs_ReadPin(&bank2, AFE_PWR_PIN);
-    #endif
-}
-
-int AFEPwrOff(){
-    #ifndef TEST
-    XGpioPs_SetOutputEnablePin(&bank2, AFE_PWR_PIN, 0);
-    for(int i = 0; i < 100000000; i ++){};
-    return !XGpioPs_ReadPin(&bank2, AFE_PWR_PIN);
-    #endif
+uint32_t AFEInitDonePin(){
+    return XGpioPs_ReadPin(&bank2, CONF_DONE_PIN);
 }
 
 void waitDDS_SYNC(uint32_t timeout){

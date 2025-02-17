@@ -25,10 +25,6 @@ typedef struct
     uint32_t CALIBRATION_EV;
 } statusControlRegisters;
 
-#define SR_TIME       0
-#define SR_OVERFLOW   1
-#define SR_INVALID    2
-
 #define CR_CLEAR      0
 #define CR_AFE_PWR    1
 
@@ -36,6 +32,10 @@ typedef struct
 #define EXT_CYCLE_CAL 1
 #define EXT_CAL       2
 #define EXT_SOFT      3
+
+#define HP_ERR_TIME       0
+#define HP_ERR_OVERFLOW   1
+#define HP_ERR_INVALID    2
 
 #define AFE_ERR_CALIBRATION 0
 #define AFE_ERR_STARTSTOP   1

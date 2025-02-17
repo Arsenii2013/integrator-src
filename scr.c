@@ -49,7 +49,7 @@ void flushIfnTEST(){
 
 void statusNotEnoughtTime(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    regs->SR |= 1 << SR_TIME;
+    regs->HP_ERR |= 1 << HP_ERR_TIME;
     flushIfnTEST();
     #ifdef DEBUG
     TM_PRINTF("DEBUG: events were not processed in one DDS_SYNC cycle\n\r");
@@ -58,7 +58,7 @@ void statusNotEnoughtTime(){
 
 void statusOverflowEvents(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    regs->SR |= 1 << SR_OVERFLOW;
+    regs->HP_ERR |= 1 << HP_ERR_OVERFLOW;
     flushIfnTEST();
     #ifdef DEBUG
     TM_PRINTF("DEBUG: event fifo overflow\n\r");
@@ -67,7 +67,7 @@ void statusOverflowEvents(){
 
 void statusInvalidEvents(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    regs->SR |= 1 << SR_INVALID;
+    regs->HP_ERR |= 1 << HP_ERR_INVALID;
     flushIfnTEST();
     #ifdef DEBUG
     TM_PRINTF("DEBUG: invalid events sequnce\n\r");

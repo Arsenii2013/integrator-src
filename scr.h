@@ -23,10 +23,16 @@ typedef struct
     uint32_t STOP_EV[SCR_EVENTS_N];
     uint32_t ZERO_EV;
     uint32_t CALIBRATION_EV;
+    uint32_t PULSE_DURATION;
+    uint32_t PAUSE_DURATION;
 } statusControlRegisters;
 
+#define SR_RUN      0
+#define SR_CAL_RUN  1
+#define SR_ERROR    2
+#define SR_INITDONE 3
+
 #define CR_CLEAR      0
-#define CR_AFE_PWR    1
 
 #define EXT_EXT       0
 #define EXT_CYCLE_CAL 1
@@ -42,12 +48,17 @@ typedef struct
 #define AFE_ERR_STOPSTOP    2
 #define AFE_ERR_STARTSTART  3
 #define AFE_ERR_STATE       4
+#define AFE_ERR_INIT        7
 
 #define LOG_ERR_SWITCH      0
 #define LOG_ERR_STARTSTOP   1
 #define LOG_ERR_STOPSTOP    2
 #define LOG_ERR_STARTSTART  3
 #define LOG_ERR_OVERFLOW    4
+
+void statusRun(uint32_t state);
+void statusCalRun(uint32_t state);
+void statusAFEInitdone(uint32_t state);
 
 void statusNotEnoughtTime();
 void statusOverflowEvents();
@@ -58,6 +69,7 @@ void statusAFEStopStop();
 void statusAFEStartStart();
 void statusAFECallibration();
 void statusAFEState(uint32_t AFEState);
+void statusAFENotInited();
 
 void statusLogStartStop();
 void statusLogStopStop();
@@ -71,7 +83,6 @@ uint32_t controlStartEv(uint32_t i);
 uint32_t controlStopEv(uint32_t i);
 uint32_t controlZeroEv();
 uint32_t controlCalEv();
-uint32_t controlAFEPwr();
 
 float controlB0();
 float controlCoeffAB();

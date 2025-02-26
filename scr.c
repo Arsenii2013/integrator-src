@@ -12,7 +12,7 @@ void initSCR(){
         statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     #endif
     REGS_BASE_SCR->SR = 0;
-    REGS_BASE_SCR->CR = 1 << CR_AFE_PWR;
+    REGS_BASE_SCR->CR = 0;
     REGS_BASE_SCR->CR_S = 0;
     REGS_BASE_SCR->CR_C = 0;
     REGS_BASE_SCR->AFE_ERR = 0;
@@ -47,7 +47,53 @@ void flushIfnTEST(){
     #endif
 }
 
+void statusError(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    regs->SR |= 1 << SR_ERROR;
+    flushIfnTEST();
+    #ifdef DEBUG
+    TM_PRINTF("DEBUG: any error\n\r");
+    #endif
+}
+void statusRun(uint32_t state){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    if(state){
+        regs->SR |= 1 << SR_RUN;
+    }else{
+        regs->SR &= ~(1 << SR_RUN);
+    }
+    flushIfnTEST();
+    #ifdef DEBUG
+    TM_PRINTF("DEBUG: RUN set %d\n\r", state);
+    #endif
+}
+void statusCalRun(uint32_t state){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    if(state){
+        regs->SR |= 1 << SR_CAL_RUN;
+    }else{
+        regs->SR &= ~(1 << SR_CAL_RUN);
+    }
+    flushIfnTEST();
+    #ifdef DEBUG
+    TM_PRINTF("DEBUG: CAL_RUN set %d\n\r", state);
+    #endif
+}
+void statusAFEInitdone(uint32_t state){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    if(state){
+        regs->SR |= 1 << SR_INITDONE;
+    }else{
+        regs->SR &= ~(1 << SR_INITDONE);
+    }
+    flushIfnTEST();
+    #ifdef DEBUG
+    TM_PRINTF("DEBUG: INITDONE set %d\n\r", state);
+    #endif
+}
+
 void statusNotEnoughtTime(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->HP_ERR |= 1 << HP_ERR_TIME;
     flushIfnTEST();
@@ -57,6 +103,7 @@ void statusNotEnoughtTime(){
 }
 
 void statusOverflowEvents(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->HP_ERR |= 1 << HP_ERR_OVERFLOW;
     flushIfnTEST();
@@ -66,6 +113,7 @@ void statusOverflowEvents(){
 }
 
 void statusInvalidEvents(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->HP_ERR |= 1 << HP_ERR_INVALID;
     flushIfnTEST();
@@ -85,7 +133,7 @@ int controlDDS_SYNC(void*){
 
     if(regs->CR & 0x1){
         regs->CR &= ~0x1;
-        regs->SR = 0;
+        regs->SR &= ~(1 << SR_ERROR);
         regs->AFE_ERR = 0;
         regs->LOG_ERR = 0;
         regs->HP_ERR = 0;
@@ -94,6 +142,7 @@ int controlDDS_SYNC(void*){
 }
 
 void statusAFEStartStop(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR |= 1 << AFE_ERR_STARTSTOP;
     flushIfnTEST();
@@ -102,6 +151,7 @@ void statusAFEStartStop(){
     #endif
 }
 void statusAFEStopStop(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR |= 1 << AFE_ERR_STOPSTOP;
     flushIfnTEST();
@@ -110,6 +160,7 @@ void statusAFEStopStop(){
     #endif
 }
 void statusAFEStartStart(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR |= 1 << AFE_ERR_STARTSTART;
     flushIfnTEST();
@@ -118,6 +169,7 @@ void statusAFEStartStart(){
     #endif
 }
 void statusAFECallibration(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR |= 1 << AFE_ERR_CALIBRATION;
     flushIfnTEST();
@@ -127,6 +179,7 @@ void statusAFECallibration(){
 }
 
 void statusAFEState(uint32_t AFEState){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR = (regs->AFE_ERR & ~(0b111 << AFE_ERR_STATE)) | AFEState << AFE_ERR_STATE;
     flushIfnTEST();
@@ -137,7 +190,18 @@ void statusAFEState(uint32_t AFEState){
     #endif
 }
 
+void statusAFENotInited(){
+    statusError();
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    regs->AFE_ERR |= 1 << AFE_ERR_INIT;
+    flushIfnTEST();
+    #ifdef DEBUG
+    TM_PRINTF("DEBUG: AFE: try to handle while callibration\n\r");
+    #endif
+}
+
 void statusLogStartStop(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_STARTSTOP;
     flushIfnTEST();
@@ -146,6 +210,7 @@ void statusLogStartStop(){
     #endif
 }
 void statusLogStopStop(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_STOPSTOP;
     flushIfnTEST();
@@ -154,6 +219,7 @@ void statusLogStopStop(){
     #endif
 }
 void statusLogStartStart(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_STARTSTART;
     flushIfnTEST();
@@ -162,6 +228,7 @@ void statusLogStartStart(){
     #endif
 }
 void statusLogSwitch(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_SWITCH;
     flushIfnTEST();
@@ -172,17 +239,13 @@ void statusLogSwitch(){
 
 
 void statusLogOverflow(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_OVERFLOW;
     flushIfnTEST();
     #ifdef DEBUG
     TM_PRINTF("DEBUG: LOG: bank overflow\n\r");
     #endif
-}
-
-uint32_t controlAFEPwr(){
-    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->CR & (1 << CR_AFE_PWR);
 }
 
 uint32_t controlExtTrig(){

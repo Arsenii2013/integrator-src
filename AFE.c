@@ -49,29 +49,28 @@ void MFMStartIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_OPERATION;
     IternalAFEData.operation = 1;
-    TM_PRINTF("DEBUG: start integral\n\r");
     #ifdef DEBUG
     TM_PRINTF("DEBUG: start integral\n\r");
     MFMPrintRegs();
     #endif
+    statusRun(1);
 }
 
 void MFMStopIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_OPERATION);
     IternalAFEData.operation = 0;
-    TM_PRINTF("DEBUG: stop integral\n\r");
     #ifdef DEBUG
     TM_PRINTF("DEBUG: stop integral\n\r");
     MFMPrintRegs();
     #endif
+    statusRun(0);
 }
 
 void MFMSetZeroIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_ZERO;
     IternalAFEData.zero = 1;
-    TM_PRINTF("DEBUG: zero integral start\n\r");
     #ifdef DEBUG
     MFMPrintRegs();
     #endif
@@ -81,7 +80,6 @@ void MFMResetZeroIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_ZERO);
     IternalAFEData.zero = 0;
-    TM_PRINTF("DEBUG: zero integral stop\n\r");
     #ifdef DEBUG
     TM_PRINTF("DEBUG: zero integral\n\r");
     MFMPrintRegs();
@@ -95,6 +93,7 @@ void MFMSetCalibration(){
     #ifdef DEBUG
     MFMPrintRegs();
     #endif
+    statusCalRun(1);
 }
 
 void MFMResetCalibration(){
@@ -102,7 +101,6 @@ void MFMResetCalibration(){
     regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_CALIBRATON);
     IternalAFEData.calibration = 0;
     IternalAFEData.calibration_ready = 0;
-    TM_PRINTF("DEBUG: start calibration\n\r");
     #ifdef DEBUG
     TM_PRINTF("DEBUG: start calibration\n\r");
     MFMPrintRegs();
@@ -113,12 +111,12 @@ void MFMEndCalibration(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     if(regs->MFM.stat_reg & (1 << MFM_STAT_CALIBRATION_READY)){
         IternalAFEData.calibration_ready = 1;
-        TM_PRINTF("DEBUG: stop calibration\n\r");
         #ifdef DEBUG
         TM_PRINTF("DEBUG: stop calibration\n\r");
         MFMPrintRegs();
         #endif
     }
+    statusCalRun(0);
 }
 
 void MFMRefreshCoeffs(){
@@ -181,7 +179,8 @@ int AFEEvent(uint32_t event, void*){
         return 0;
     }
     if(!IternalAFEData.inited){
-        return 0; //TODO error if event come while AFE dont init
+        statusAFENotInited();
+        return 0; 
     }
     
     uint32_t trig_mode = trigEvSource();
@@ -238,7 +237,6 @@ int AFEEvent(uint32_t event, void*){
         }
     }
     if(cal){
-        //TM_PRINTF("cal\n\r");
         if(!IternalAFEData.calibration_ready){
             statusAFECallibration();
         } else {
@@ -264,12 +262,14 @@ int AFEDDS_SYNC(void*){
     } 
     if(IternalAFEData.inited && !initDone_Pin){
         IternalAFEData.inited = 0;
+        statusAFEInitdone(0);
     }
     if(init_delay_enable)
         init_delay ++;
     if(init_delay == 10000){
         init_delay = 0;
         AFEInit();
+        statusAFEInitdone(1);
         init_delay_enable = 0;
         IternalAFEData.inited = initDone_Pin;
     }

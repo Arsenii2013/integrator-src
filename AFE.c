@@ -13,6 +13,7 @@ static struct{
     uint32_t calibration_ready;
     uint32_t operation;
     uint32_t change_in_that_DDS_SYNC;
+    uint32_t bser_reset;
     float B0;
     float coeffAB;
     float coeffDB;
@@ -31,11 +32,13 @@ void MFMRefreshOffset();
 void MFMSetBser(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.bser_ctrl_reg |= 1 << MFM_BSER_ENA;
+    IternalAFEData.bser_reset = 0;
 }
 
 void MFMResetBser(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.bser_ctrl_reg &= ~(1 << MFM_BSER_ENA);
+    IternalAFEData.bser_reset = 1;
 }
 
 volatile AFERegs * AFERegPtr(){
@@ -46,7 +49,7 @@ void MFMStartIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_OPERATION;
     IternalAFEData.operation = 1;
-    MFMSetBser();
+    TM_PRINTF("DEBUG: start integral\n\r");
     #ifdef DEBUG
     TM_PRINTF("DEBUG: start integral\n\r");
     MFMPrintRegs();
@@ -57,7 +60,7 @@ void MFMStopIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_OPERATION);
     IternalAFEData.operation = 0;
-    MFMResetBser();
+    TM_PRINTF("DEBUG: stop integral\n\r");
     #ifdef DEBUG
     TM_PRINTF("DEBUG: stop integral\n\r");
     MFMPrintRegs();
@@ -68,6 +71,7 @@ void MFMSetZeroIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_ZERO;
     IternalAFEData.zero = 1;
+    TM_PRINTF("DEBUG: zero integral start\n\r");
     #ifdef DEBUG
     MFMPrintRegs();
     #endif
@@ -77,6 +81,7 @@ void MFMResetZeroIntegral(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_ZERO);
     IternalAFEData.zero = 0;
+    TM_PRINTF("DEBUG: zero integral stop\n\r");
     #ifdef DEBUG
     TM_PRINTF("DEBUG: zero integral\n\r");
     MFMPrintRegs();
@@ -97,6 +102,7 @@ void MFMResetCalibration(){
     regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_CALIBRATON);
     IternalAFEData.calibration = 0;
     IternalAFEData.calibration_ready = 0;
+    TM_PRINTF("DEBUG: start calibration\n\r");
     #ifdef DEBUG
     TM_PRINTF("DEBUG: start calibration\n\r");
     MFMPrintRegs();
@@ -107,6 +113,7 @@ void MFMEndCalibration(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     if(regs->MFM.stat_reg & (1 << MFM_STAT_CALIBRATION_READY)){
         IternalAFEData.calibration_ready = 1;
+        TM_PRINTF("DEBUG: stop calibration\n\r");
         #ifdef DEBUG
         TM_PRINTF("DEBUG: stop calibration\n\r");
         MFMPrintRegs();
@@ -178,7 +185,7 @@ int AFEEvent(uint32_t event, void*){
     }
     
     uint32_t trig_mode = trigEvSource();
-    uint32_t start, stop, zero, cal;
+    uint32_t start = 0, stop = 0, zero = 0, cal = 0;
     if(trig_mode == TRIG_EVENT){
         for(uint32_t i = 0; i < 4 && !start; i++){
             start = event == controlStartEv(i);
@@ -227,10 +234,11 @@ int AFEEvent(uint32_t event, void*){
             MFMSetZeroIntegral();
             IternalAFEData.B0 = controlB0();
             MFMRefreshOffset();
+            MFMResetBser();
         }
     }
     if(cal){
-        TM_PRINTF("cal\n\r");
+        //TM_PRINTF("cal\n\r");
         if(!IternalAFEData.calibration_ready){
             statusAFECallibration();
         } else {
@@ -259,7 +267,7 @@ int AFEDDS_SYNC(void*){
     }
     if(init_delay_enable)
         init_delay ++;
-    if(init_delay == 100000){
+    if(init_delay == 10000){
         init_delay = 0;
         AFEInit();
         init_delay_enable = 0;
@@ -281,6 +289,10 @@ int AFEDDS_SYNC(void*){
 
     if(!IternalAFEData.calibration_ready){
         MFMEndCalibration();
+    }
+
+    if(IternalAFEData.bser_reset){
+        MFMSetBser();
     }
 
     if(IternalAFEData.mode != controlMode()){

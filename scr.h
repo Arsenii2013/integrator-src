@@ -99,6 +99,9 @@ uint32_t controlExtTrigSoft();
 void statusExtTrigSoft();
 void statusExtTrigCal();
 
+uint32_t controlPulseDuration();
+uint32_t controlPauseDuration();
+
 void initSCR();
 volatile statusControlRegisters * SCRegPtr();
 

@@ -20,7 +20,9 @@ static struct{
     float coeffBA;
     float coeffBD;
     uint32_t mode;
-} IternalAFEData = {0, 0, 0, 1, 0, 0, 0., 0., 0., 0., 0., MFM_MODE_ANALOG_TO_ANALOG};
+    uint32_t pulse_duration;
+    uint32_t pause_duration;
+} IternalAFEData = {0, 0, 0, 1, 0, 0, 0., 0., 0., 0., 0., MFM_MODE_ANALOG_TO_ANALOG, 100, 200};
 
 void MFMPrintRegs(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
@@ -117,6 +119,16 @@ void MFMEndCalibration(){
         #endif
     }
     statusCalRun(0);
+}
+
+void MFMSetPulseDuratuion(uint32_t val){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    regs->MFM.bser_pulse_duration = val;
+}
+
+void MFMSetPauseDuratuion(uint32_t val){
+    AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
+    regs->MFM.bser_pause_duration = val;
 }
 
 void MFMRefreshCoeffs(){
@@ -295,26 +307,36 @@ int AFEDDS_SYNC(void*){
         MFMSetBser();
     }
 
-    if(IternalAFEData.mode != controlMode()){
-        IternalAFEData.mode = controlMode();
-        MFMRefreshMode();
-        MFMRefreshCoeffs();
-    }
-    if(IternalAFEData.coeffAB != controlCoeffAB()){
-        IternalAFEData.coeffAB = controlCoeffAB();
-        MFMRefreshCoeffs();
-    }
-    if(IternalAFEData.coeffDB != controlBserIn()){
-        IternalAFEData.coeffDB = controlBserIn();
-        MFMRefreshCoeffs();
-    }
-    if(IternalAFEData.coeffBA != controlCoeffBA()){
-        IternalAFEData.coeffBA = controlCoeffBA();
-        MFMRefreshCoeffs();
-    }
-    if(IternalAFEData.coeffBD != controlBserOut()){
-        IternalAFEData.coeffBD = controlBserOut();
-        MFMRefreshCoeffs();
+    if(!IternalAFEData.operation){
+        if(IternalAFEData.mode != controlMode()){
+            IternalAFEData.mode = controlMode();
+            MFMRefreshMode();
+            MFMRefreshCoeffs();
+        }
+        if(IternalAFEData.coeffAB != controlCoeffAB()){
+            IternalAFEData.coeffAB = controlCoeffAB();
+            MFMRefreshCoeffs();
+        }
+        if(IternalAFEData.coeffDB != controlBserIn()){
+            IternalAFEData.coeffDB = controlBserIn();
+            MFMRefreshCoeffs();
+        }
+        if(IternalAFEData.coeffBA != controlCoeffBA()){
+            IternalAFEData.coeffBA = controlCoeffBA();
+            MFMRefreshCoeffs();
+        }
+        if(IternalAFEData.coeffBD != controlBserOut()){
+            IternalAFEData.coeffBD = controlBserOut();
+            MFMRefreshCoeffs();
+        }
+        if(IternalAFEData.pulse_duration != controlPulseDuration()){
+            MFMSetPulseDuratuion(controlPulseDuration());
+            IternalAFEData.pulse_duration = controlPulseDuration();
+        }
+        if(IternalAFEData.pause_duration != controlPauseDuration()){
+            MFMSetPauseDuratuion(controlPauseDuration());
+            IternalAFEData.pause_duration = controlPauseDuration();
+        }
     }
     return 0;
 }
@@ -391,8 +413,8 @@ void AFEInit(){
     MFMRefreshOffset();
     MFMResetBser();
     MFMSetZeroIntegral();
-    regs->MFM.bser_pulse_duration = 100;
-    regs->MFM.bser_pause_duration = 200;
+    MFMSetPulseDuratuion(controlPulseDuration());
+    MFMSetPauseDuratuion(controlPauseDuration());
     #ifdef DEBUG
     MFMPrintRegs();
     #endif

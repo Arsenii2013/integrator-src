@@ -35,6 +35,8 @@ void initSCR(){
     REGS_BASE_SCR->BSER_IN = 0;
     REGS_BASE_SCR->K_B_TO_ANALOG = 0;
     REGS_BASE_SCR->BSER_OUT = 0;
+    REGS_BASE_SCR->PULSE_DURATION = 100;
+    REGS_BASE_SCR->PAUSE_DURATION = 200;
 }
 
 volatile statusControlRegisters * SCRegPtr(){
@@ -345,4 +347,13 @@ float controlBserOut(){
 uint32_t controlMode(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     return regs->MODE;
+}
+
+uint32_t controlPulseDuration(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->PULSE_DURATION;
+}
+uint32_t controlPauseDuration(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->PAUSE_DURATION;
 }

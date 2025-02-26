@@ -138,11 +138,6 @@ int loggerDDS_SYNC(void*){
         if(CRStop){
             TM_PRINTF("CRStop\n\r");
             regs->SR |= (1 << SR_IDLE);
-            if(CRSwitch){
-                regs->SR   ^= (1 << SR_BANK);
-                switchLog  = 0; 
-                regs->CR   &= ~(1 << CR_SWITCH);
-            }
         }
         if(CRStart){
             statusLogStartStart();
@@ -151,6 +146,12 @@ int loggerDDS_SYNC(void*){
         if(CRStart){
             TM_PRINTF("CRStart\n\r");
             regs->SR &= ~(1 << SR_IDLE);
+            if(CRSwitch){
+                regs->SR   ^= (1 << SR_BANK);
+                switchLog  = 0; 
+                regs->CR   &= ~(1 << CR_SWITCH);
+                TM_PRINTF("DEBUG: CRSwitch\n\r");
+            }
             uint8_t activeBank = regs->SR & (1 << SR_BANK) ? 1 : 0;
             regs->bankRegs[activeBank].dcm = regs->DCM;
             regs->bankRegs[activeBank].cfg = regs->CFG;

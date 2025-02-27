@@ -7,7 +7,7 @@
 #include <math.h>
 
 //#define TEST
-//#define DEBUG
+#define DEBUG
 //#define PROFILING
 
 #ifndef TEST

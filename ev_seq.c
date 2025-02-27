@@ -9,16 +9,10 @@ static struct {
 } iternalSeqData = {0, {0}, {0}, 0};
 
 void seqStart(){
-    #ifdef DEBUG
-    TM_PRINTF("seq start\n\r");
-    #endif
     iternalSeqData.running = 1;
 }
 
 void seqStop(){
-    #ifdef DEBUG
-    TM_PRINTF("seq stop\n\r");
-    #endif
     iternalSeqData.running = 0;
 }
 

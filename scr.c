@@ -54,7 +54,7 @@ void statusError(){
     regs->SR |= 1 << SR_ERROR;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: any error\n\r");
+    //TM_PRINTF("DEBUG: any error\n\r");
     #endif
 }
 void statusRun(uint32_t state){
@@ -65,9 +65,6 @@ void statusRun(uint32_t state){
         regs->SR &= ~(1 << SR_RUN);
     }
     flushIfnTEST();
-    #ifdef DEBUG
-    TM_PRINTF("DEBUG: RUN set %d\n\r", state);
-    #endif
 }
 void statusCalRun(uint32_t state){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
@@ -77,9 +74,6 @@ void statusCalRun(uint32_t state){
         regs->SR &= ~(1 << SR_CAL_RUN);
     }
     flushIfnTEST();
-    #ifdef DEBUG
-    TM_PRINTF("DEBUG: CAL_RUN set %d\n\r", state);
-    #endif
 }
 void statusAFEInitdone(uint32_t state){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
@@ -89,9 +83,6 @@ void statusAFEInitdone(uint32_t state){
         regs->SR &= ~(1 << SR_INITDONE);
     }
     flushIfnTEST();
-    #ifdef DEBUG
-    TM_PRINTF("DEBUG: INITDONE set %d\n\r", state);
-    #endif
 }
 
 void statusNotEnoughtTime(){
@@ -100,7 +91,7 @@ void statusNotEnoughtTime(){
     regs->HP_ERR |= 1 << HP_ERR_TIME;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: events were not processed in one DDS_SYNC cycle\n\r");
+    //TM_PRINTF("DEBUG: events were not processed in one DDS_SYNC cycle\n\r");
     #endif
 }
 
@@ -110,7 +101,7 @@ void statusOverflowEvents(){
     regs->HP_ERR |= 1 << HP_ERR_OVERFLOW;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: event fifo overflow\n\r");
+    //TM_PRINTF("DEBUG: event fifo overflow\n\r");
     #endif
 }
 
@@ -181,15 +172,9 @@ void statusAFECallibration(){
 }
 
 void statusAFEState(uint32_t AFEState){
-    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR = (regs->AFE_ERR & ~(0b111 << AFE_ERR_STATE)) | AFEState << AFE_ERR_STATE;
     flushIfnTEST();
-    #ifdef DEBUG
-    if(AFEState != 0){
-        TM_PRINTF("DEBUG: AFE: state = %x\n\r", AFEState);
-    }
-    #endif
 }
 
 void statusAFENotInited(){
@@ -285,9 +270,6 @@ void statusExtTrigCal(){
 
 uint32_t controlStartEv(uint32_t i){
     if(i > SCR_EVENTS_N){
-        #ifdef DEBUG
-        TM_PRINTF("DEBUG: control registers read err\n\r");
-        #endif
         return 0;
     }
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
@@ -296,9 +278,6 @@ uint32_t controlStartEv(uint32_t i){
 
 uint32_t controlStopEv(uint32_t i){
     if(i > SCR_EVENTS_N){
-        #ifdef DEBUG
-        TM_PRINTF("DEBUG: control registers read err\n\r");
-        #endif
         return 0;
     }
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;

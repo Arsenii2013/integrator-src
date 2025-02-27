@@ -28,7 +28,7 @@ int eventPrint(uint32_t ev, void *){
 }
 int eventPrintNZero(uint32_t ev, void *){
     if(ev != 0)
-        TM_PRINTF("Event %d\n\r", ev);
+        TM_PRINTF("DEBUG: event %d\n\r", ev);
     return 0;
 }
 
@@ -138,7 +138,7 @@ int main()
     #endif
 
     schedulerRecord apps[] = {
-        #ifndef DEBUG
+        #ifdef DEBUG
         {.name="print", .DDS_SYNCCallback=DDS_SYNCPrint, .eventCallback=eventPrintNZero, .appData=NULL}, 
         #endif
         #ifndef TEST

@@ -95,9 +95,7 @@ void logg(logEntry e){
     uint8_t activeBank = regs->SR & (1 << SR_BANK) ? 1 : 0;
     
     if(!logRunning()){
-        #ifdef DEBUG
-        TM_PRINTF("ERROR: try write stopped log\n");
-        #endif
+        TM_PRINTF("ERROR: try write stopped log\n\r");
         return;
     }
     if(bankCnt[activeBank] == 0){
@@ -136,7 +134,9 @@ int loggerDDS_SYNC(void*){
 
     if(running){
         if(CRStop){
-            TM_PRINTF("CRStop\n\r");
+            #ifdef DEBUG
+            TM_PRINTF("DEBUG: Logger stop\n\r");
+            #endif
             regs->SR |= (1 << SR_IDLE);
         }
         if(CRStart){
@@ -144,13 +144,17 @@ int loggerDDS_SYNC(void*){
         }
     }else{
         if(CRStart){
-            TM_PRINTF("CRStart\n\r");
+            #ifdef DEBUG
+            TM_PRINTF("DEBUG: Logger start\n\r");
+            #endif
             regs->SR &= ~(1 << SR_IDLE);
             if(CRSwitch){
                 regs->SR   ^= (1 << SR_BANK);
                 switchLog  = 0; 
                 regs->CR   &= ~(1 << CR_SWITCH);
-                TM_PRINTF("DEBUG: CRSwitch\n\r");
+            #ifdef DEBUG
+            TM_PRINTF("DEBUG: Logger switch\n\r");
+            #endif
             }
             uint8_t activeBank = regs->SR & (1 << SR_BANK) ? 1 : 0;
             regs->bankRegs[activeBank].dcm = regs->DCM;

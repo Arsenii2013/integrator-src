@@ -53,7 +53,6 @@ void MFMStartIntegral(){
     IternalAFEData.operation = 1;
     #ifdef DEBUG
     TM_PRINTF("DEBUG: start integral\n\r");
-    MFMPrintRegs();
     #endif
     statusRun(1);
 }
@@ -64,7 +63,6 @@ void MFMStopIntegral(){
     IternalAFEData.operation = 0;
     #ifdef DEBUG
     TM_PRINTF("DEBUG: stop integral\n\r");
-    MFMPrintRegs();
     #endif
     statusRun(0);
 }
@@ -74,7 +72,7 @@ void MFMSetZeroIntegral(){
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_ZERO;
     IternalAFEData.zero = 1;
     #ifdef DEBUG
-    MFMPrintRegs();
+    TM_PRINTF("DEBUG: zero start integral\n\r");
     #endif
 }
 
@@ -83,8 +81,7 @@ void MFMResetZeroIntegral(){
     regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_ZERO);
     IternalAFEData.zero = 0;
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: zero integral\n\r");
-    MFMPrintRegs();
+    TM_PRINTF("DEBUG: zero stop integral\n\r");
     #endif
 }
 
@@ -93,7 +90,7 @@ void MFMSetCalibration(){
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_CALIBRATON;
     IternalAFEData.calibration = 1;
     #ifdef DEBUG
-    MFMPrintRegs();
+    TM_PRINTF("DEBUG: calibration start\n\r");
     #endif
     statusCalRun(1);
 }
@@ -103,10 +100,6 @@ void MFMResetCalibration(){
     regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_CALIBRATON);
     IternalAFEData.calibration = 0;
     IternalAFEData.calibration_ready = 0;
-    #ifdef DEBUG
-    TM_PRINTF("DEBUG: start calibration\n\r");
-    MFMPrintRegs();
-    #endif
 }
 
 void MFMEndCalibration(){
@@ -114,8 +107,7 @@ void MFMEndCalibration(){
     if(regs->MFM.stat_reg & (1 << MFM_STAT_CALIBRATION_READY)){
         IternalAFEData.calibration_ready = 1;
         #ifdef DEBUG
-        TM_PRINTF("DEBUG: stop calibration\n\r");
-        MFMPrintRegs();
+        TM_PRINTF("DEBUG: calibration stop\n\r");
         #endif
     }
     statusCalRun(0);
@@ -329,13 +321,14 @@ int AFEDDS_SYNC(void*){
             IternalAFEData.coeffBD = controlBserOut();
             MFMRefreshCoeffs();
         }
-        if(IternalAFEData.pulse_duration != controlPulseDuration()){
-            MFMSetPulseDuratuion(controlPulseDuration());
-            IternalAFEData.pulse_duration = controlPulseDuration();
+        uint32_t pulse = controlPulseDuration(), pause = controlPauseDuration();
+        if(IternalAFEData.pulse_duration != pulse){
+            MFMSetPulseDuratuion(pulse);
+            IternalAFEData.pulse_duration = pulse;
         }
-        if(IternalAFEData.pause_duration != controlPauseDuration()){
-            MFMSetPauseDuratuion(controlPauseDuration());
-            IternalAFEData.pause_duration = controlPauseDuration();
+        if(IternalAFEData.pause_duration != pause){
+            MFMSetPauseDuratuion(pause);
+            IternalAFEData.pause_duration = pause;
         }
     }
     return 0;
@@ -402,7 +395,6 @@ void AFEEmulinit(){
 }   
 
 void AFEInit(){
-    TM_PRINTF("AFE INIT\n\r");
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
     regs->ctrl_reg = 0;
     regs->MFM.ctrl_reg = 0;
@@ -416,7 +408,7 @@ void AFEInit(){
     MFMSetPulseDuratuion(controlPulseDuration());
     MFMSetPauseDuratuion(controlPauseDuration());
     #ifdef DEBUG
-    MFMPrintRegs();
+    TM_PRINTF("DEBUG: AFE init\n\r");
     #endif
 }
 

@@ -54,7 +54,7 @@ void statusError(){
     regs->SR |= 1 << SR_ERROR;
     flushIfnTEST();
     #ifdef DEBUG
-    //TM_PRINTF("DEBUG: any error\n\r");
+    //PRINTF("DEBUG: any error\n\r");
     #endif
 }
 void statusRun(uint32_t state){
@@ -91,7 +91,7 @@ void statusNotEnoughtTime(){
     regs->HP_ERR |= 1 << HP_ERR_TIME;
     flushIfnTEST();
     #ifdef DEBUG
-    //TM_PRINTF("DEBUG: events were not processed in one DDS_SYNC cycle\n\r");
+    //PRINTF("DEBUG: events were not processed in one DDS_SYNC cycle\n\r");
     #endif
 }
 
@@ -101,7 +101,7 @@ void statusOverflowEvents(){
     regs->HP_ERR |= 1 << HP_ERR_OVERFLOW;
     flushIfnTEST();
     #ifdef DEBUG
-    //TM_PRINTF("DEBUG: event fifo overflow\n\r");
+    //PRINTF("DEBUG: event fifo overflow\n\r");
     #endif
 }
 
@@ -111,7 +111,7 @@ void statusInvalidEvents(){
     regs->HP_ERR |= 1 << HP_ERR_INVALID;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: invalid events sequnce\n\r");
+    PRINTF("DEBUG: invalid events sequnce\n\r");
     #endif
 }
 
@@ -140,7 +140,7 @@ void statusAFEStartStop(){
     regs->AFE_ERR |= 1 << AFE_ERR_STARTSTOP;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: AFE: start and stop in one DDS_SYNC cycle\n\r");
+    PRINTF("DEBUG: AFE: start and stop in one DDS_SYNC cycle\n\r");
     #endif
 }
 void statusAFEStopStop(){
@@ -149,7 +149,7 @@ void statusAFEStopStop(){
     regs->AFE_ERR |= 1 << AFE_ERR_STOPSTOP;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: AFE: try to stop stopped integral\n\r");
+    PRINTF("DEBUG: AFE: try to stop stopped integral\n\r");
     #endif
 }
 void statusAFEStartStart(){
@@ -158,7 +158,7 @@ void statusAFEStartStart(){
     regs->AFE_ERR |= 1 << AFE_ERR_STARTSTART;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: AFE: try to start running integral\n\r");
+    PRINTF("DEBUG: AFE: try to start running integral\n\r");
     #endif
 }
 void statusAFECallibration(){
@@ -167,7 +167,7 @@ void statusAFECallibration(){
     regs->AFE_ERR |= 1 << AFE_ERR_CALIBRATION;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: AFE: try to handle while callibration\n\r");
+    PRINTF("DEBUG: AFE: try to handle while callibration\n\r");
     #endif
 }
 
@@ -183,7 +183,7 @@ void statusAFENotInited(){
     regs->AFE_ERR |= 1 << AFE_ERR_INIT;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: AFE: try to handle while callibration\n\r");
+    PRINTF("DEBUG: AFE: try to handle while callibration\n\r");
     #endif
 }
 
@@ -193,7 +193,7 @@ void statusLogStartStop(){
     regs->LOG_ERR |= 1 << LOG_ERR_STARTSTOP;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: LOG: start and stop in one DDS_SYNC cycle\n\r");
+    PRINTF("DEBUG: LOG: start and stop in one DDS_SYNC cycle\n\r");
     #endif
 }
 void statusLogStopStop(){
@@ -202,7 +202,7 @@ void statusLogStopStop(){
     regs->LOG_ERR |= 1 << LOG_ERR_STOPSTOP;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: LOG: try to stop stopped log\n\r");
+    PRINTF("DEBUG: LOG: try to stop stopped log\n\r");
     #endif
 }
 void statusLogStartStart(){
@@ -211,7 +211,7 @@ void statusLogStartStart(){
     regs->LOG_ERR |= 1 << LOG_ERR_STARTSTART;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: LOG: try to start running log\n\r");
+    PRINTF("DEBUG: LOG: try to start running log\n\r");
     #endif
 }
 void statusLogSwitch(){
@@ -220,7 +220,7 @@ void statusLogSwitch(){
     regs->LOG_ERR |= 1 << LOG_ERR_SWITCH;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: LOG: try to switch bank while running\n\r");
+    PRINTF("DEBUG: LOG: try to switch bank while running\n\r");
     #endif
 }
 
@@ -231,7 +231,7 @@ void statusLogOverflow(){
     regs->LOG_ERR |= 1 << LOG_ERR_OVERFLOW;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: LOG: bank overflow\n\r");
+    PRINTF("DEBUG: LOG: bank overflow\n\r");
     #endif
 }
 

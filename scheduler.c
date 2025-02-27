@@ -24,7 +24,7 @@ void schedulerDDS_SYNC(){
     XTime *p_before_test = &before_test;
     XTime after_test;
     XTime *p_after_test = &after_test;
-    TM_PRINTF("DDS_SYNC time: ");
+    PRINTF("DDS_SYNC time: ");
     #endif
     for(size_t i = 0; i < schedulerCnt; i ++){
         if(schedulerInfo[i].DDS_SYNCCallback != NULL) {
@@ -37,12 +37,12 @@ void schedulerDDS_SYNC(){
             #ifdef PROFILING
             XTime_GetTime(p_after_test);
             time_eval = (u64) after_test - (u64) before_test;
-            TM_PRINTF("%s:%lu ", schedulerInfo[i].name, time_eval);
+            PRINTF("%s:%lu ", schedulerInfo[i].name, time_eval);
             #endif
 
             #ifdef DEBUG
             if(exitCode != 0){
-                TM_PRINTF("%s DDS_SYNC callback exit with code %d\n\r", schedulerInfo[i].name, exitCode);
+                PRINTF("%s DDS_SYNC callback exit with code %d\n\r", schedulerInfo[i].name, exitCode);
             }
             #else
             (void)exitCode;
@@ -50,7 +50,7 @@ void schedulerDDS_SYNC(){
         }
     }
     #ifdef PROFILING
-    TM_PRINTF("\n\r");
+    PRINTF("\n\r");
     #endif
 }
 
@@ -61,7 +61,7 @@ void schedulerEvent(uint32_t ev){
     XTime *p_before_test = &before_test;
     XTime after_test;
     XTime *p_after_test = &after_test;
-    TM_PRINTF("EVENT 0x%x time: ", ev);
+    PRINTF("EVENT 0x%x time: ", ev);
     #endif
     for(size_t i = 0; i < schedulerCnt; i ++){
         #ifdef PROFILING
@@ -72,7 +72,7 @@ void schedulerEvent(uint32_t ev){
             int exitCode = schedulerInfo[i].eventCallback(ev, schedulerInfo[i].appData);
             #ifdef DEBUG
             if(exitCode != 0){
-                TM_PRINTF("%s callback on event %d exit with code %d\n\r", schedulerInfo[i].name, ev, exitCode);
+                PRINTF("%s callback on event %d exit with code %d\n\r", schedulerInfo[i].name, ev, exitCode);
             }
             #else
             (void)exitCode;
@@ -82,10 +82,10 @@ void schedulerEvent(uint32_t ev){
         #ifdef PROFILING
         XTime_GetTime(p_after_test);
         time_eval = (u64) after_test - (u64) before_test;
-        TM_PRINTF("%s:%lu ", schedulerInfo[i].name, time_eval);
+        PRINTF("%s:%lu ", schedulerInfo[i].name, time_eval);
         #endif
     }
     #ifdef PROFILING
-    TM_PRINTF("\n\r");
+    PRINTF("\n\r");
     #endif
 }

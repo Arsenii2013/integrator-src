@@ -19,16 +19,16 @@
 #endif
 
 int DDS_SYNCPrint(void *){
-    //TM_PRINTF("DDS_SYNC\n\r");
+    //PRINTF("DDS_SYNC\n\r");
     return 0;
 }
 int eventPrint(uint32_t ev, void *){
-    //TM_PRINTF("Event %d\n\r", ev);
+    //PRINTF("Event %d\n\r", ev);
     return 0;
 }
 int eventPrintNZero(uint32_t ev, void *){
     if(ev != 0)
-        TM_PRINTF("DEBUG: event %d\n\r", ev);
+        PRINTF("DEBUG: event %d\n\r", ev);
     return 0;
 }
 
@@ -68,7 +68,7 @@ int DDS_SYNCApp(void*){
         uint32_t DAC = MFMGetDAC();
 
         logIntegrator e = {.B = *(uint32_t *)&B, .ADC = ADC, .DAC = DAC, .integral_low = intergral, .integral_high = intergral >> 32};
-        //TM_PRINTF("%x, %x, %x, %x\n\r", e.B, e.ADC, e.integral_low, e.integral_high);
+        //PRINTF("%x, %x, %x, %x\n\r", e.B, e.ADC, e.integral_low, e.integral_high);
         logg(*(logEntry *) &e);
     }
     return 0;
@@ -124,10 +124,10 @@ int main()
     
     init_platform();
     initPStoPL();
-    TM_PRINTF("start\n\r");
+    PRINTF("start\n\r");
     #ifdef DEBUG
     volatile uint32_t tmp = readEvent();
-    TM_PRINTF("%d\n\r", tmp);
+    PRINTF("%d\n\r", tmp);
     #endif
     #endif
 
@@ -189,7 +189,7 @@ int main()
 
         uint32_t events_untill_sync = cyclicBufferReadUntillLast(&ev_buff, ev_buff_flat, 0x100);
         uint32_t sync_cnt = 0;
-        //TM_PRINTF("%d\n\r", events_untill_sync);
+        //PRINTF("%d\n\r", events_untill_sync);
         for(uint32_t i = 0; i < events_untill_sync; i++){
             schedulerEvent(ev_buff_flat[i] & 0xff);
             if(ev_buff_flat[i] & 0x100){

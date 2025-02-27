@@ -79,7 +79,7 @@ uint32_t findLastDDS_SYNC(cyclicBuffer * buff){
     }
     #ifdef DEBUG
     if(cnt == 0){
-        TM_PRINTF("DEBUG: zero DDS_SYNC events\n\r");
+        PRINTF("DEBUG: zero DDS_SYNC events\n\r");
         return 0xffff;
     }
     #endif

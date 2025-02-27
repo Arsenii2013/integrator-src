@@ -27,7 +27,7 @@ uint32_t integralAnalog(){
 
 void setRunSequence(){
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: ext trig integrate\n\r");
+    PRINTF("DEBUG: ext trig integrate\n\r");
     #endif
     uint32_t ev[32] = {0}, 
              dl[32] = {0}, 
@@ -65,7 +65,7 @@ void setRunSequence(){
 
 void setSwitchSequence(uint32_t mode_from, uint32_t mode_to){
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: ext trig mode change\n\r");
+    PRINTF("DEBUG: ext trig mode change\n\r");
     #endif
     uint32_t ev[32] = {0}, 
              dl[32] = {0}, 
@@ -91,7 +91,7 @@ void setSwitchSequence(uint32_t mode_from, uint32_t mode_to){
 
 void setCalibrationSequence(){
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: ext trig calibration\n\r");
+    PRINTF("DEBUG: ext trig calibration\n\r");
     #endif
     uint32_t ev[32] = {0}, 
              dl[32] = {0}, 

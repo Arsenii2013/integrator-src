@@ -58,7 +58,7 @@ uint32_t seqReadEvents(cyclicBuffer * buff){
         i++;
     }
     if(i > 1){
-        TM_PRINTF("CRIT ERROR: more thah one event in external trigger cycle\n\r");
+        PRINTF("CRIT ERROR: more thah one event in external trigger cycle\n\r");
     }
     return i;
 }

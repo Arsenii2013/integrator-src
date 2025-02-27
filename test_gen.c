@@ -34,7 +34,7 @@ void testGenInit(uint32_t * newEvents, uint64_t * newCycles, uint32_t cnt, uint3
     int cycle = 0;
     for(int i = 0; i < cnt; i ++){
         if(newCycles[i] < cycle){
-            TM_PRINTF("ERROR: testGenEvents events must go in non-decreasing order\n");
+            PRINTF("ERROR: testGenEvents events must go in non-decreasing order\n");
         }
         cycle = newCycles[i];
     }

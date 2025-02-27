@@ -20,9 +20,9 @@
 
 #ifdef TEST
     #include <stdio.h>
-    #define TM_PRINTF(f_, ...) printf((f_), ##__VA_ARGS__)
+    #define PRINTF(f_, ...) printf((f_), ##__VA_ARGS__)
 #else
-    #define TM_PRINTF(f_, ...) xil_printf((f_), ##__VA_ARGS__)
+    #define PRINTF(f_, ...) xil_printf((f_), ##__VA_ARGS__)
 #endif
 
 #define DDS_SYNC_PRD 20

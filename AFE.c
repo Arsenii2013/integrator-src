@@ -26,7 +26,7 @@ static struct{
 
 void MFMPrintRegs(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
-    TM_PRINTF("ctrl: %x stat: %x ana_hi: %x ana_low: %x\n\r", regs->MFM.ctrl_reg, regs->MFM.stat_reg, regs->MFM.mf_ana_i_hi, regs->MFM.mf_ana_i_low);
+    PRINTF("ctrl: %x stat: %x ana_hi: %x ana_low: %x\n\r", regs->MFM.ctrl_reg, regs->MFM.stat_reg, regs->MFM.mf_ana_i_hi, regs->MFM.mf_ana_i_low);
 }
 
 void MFMRefreshOffset();
@@ -52,7 +52,7 @@ void MFMStartIntegral(){
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_OPERATION;
     IternalAFEData.operation = 1;
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: start integral\n\r");
+    PRINTF("DEBUG: start integral\n\r");
     #endif
     statusRun(1);
 }
@@ -62,7 +62,7 @@ void MFMStopIntegral(){
     regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_OPERATION);
     IternalAFEData.operation = 0;
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: stop integral\n\r");
+    PRINTF("DEBUG: stop integral\n\r");
     #endif
     statusRun(0);
 }
@@ -72,7 +72,7 @@ void MFMSetZeroIntegral(){
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_ZERO;
     IternalAFEData.zero = 1;
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: zero start integral\n\r");
+    PRINTF("DEBUG: zero start integral\n\r");
     #endif
 }
 
@@ -81,7 +81,7 @@ void MFMResetZeroIntegral(){
     regs->MFM.ctrl_reg &= ~(1 << MFM_CTRL_ZERO);
     IternalAFEData.zero = 0;
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: zero stop integral\n\r");
+    PRINTF("DEBUG: zero stop integral\n\r");
     #endif
 }
 
@@ -90,7 +90,7 @@ void MFMSetCalibration(){
     regs->MFM.ctrl_reg |= 1 << MFM_CTRL_CALIBRATON;
     IternalAFEData.calibration = 1;
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: calibration start\n\r");
+    PRINTF("DEBUG: calibration start\n\r");
     #endif
     statusCalRun(1);
 }
@@ -107,7 +107,7 @@ void MFMEndCalibration(){
     if(regs->MFM.stat_reg & (1 << MFM_STAT_CALIBRATION_READY)){
         IternalAFEData.calibration_ready = 1;
         #ifdef DEBUG
-        TM_PRINTF("DEBUG: calibration stop\n\r");
+        PRINTF("DEBUG: calibration stop\n\r");
         #endif
     }
     statusCalRun(0);
@@ -408,7 +408,7 @@ void AFEInit(){
     MFMSetPulseDuratuion(controlPulseDuration());
     MFMSetPauseDuratuion(controlPauseDuration());
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: AFE init\n\r");
+    PRINTF("DEBUG: AFE init\n\r");
     #endif
 }
 

@@ -95,7 +95,7 @@ void logg(logEntry e){
     uint8_t activeBank = regs->SR & (1 << SR_BANK) ? 1 : 0;
     
     if(!logRunning()){
-        TM_PRINTF("ERROR: try write stopped log\n\r");
+        PRINTF("ERROR: try write stopped log\n\r");
         return;
     }
     if(bankCnt[activeBank] == 0){
@@ -135,7 +135,7 @@ int loggerDDS_SYNC(void*){
     if(running){
         if(CRStop){
             #ifdef DEBUG
-            TM_PRINTF("DEBUG: Logger stop\n\r");
+            PRINTF("DEBUG: Logger stop\n\r");
             #endif
             regs->SR |= (1 << SR_IDLE);
         }
@@ -145,7 +145,7 @@ int loggerDDS_SYNC(void*){
     }else{
         if(CRStart){
             #ifdef DEBUG
-            TM_PRINTF("DEBUG: Logger start\n\r");
+            PRINTF("DEBUG: Logger start\n\r");
             #endif
             regs->SR &= ~(1 << SR_IDLE);
             if(CRSwitch){
@@ -153,7 +153,7 @@ int loggerDDS_SYNC(void*){
                 switchLog  = 0; 
                 regs->CR   &= ~(1 << CR_SWITCH);
             #ifdef DEBUG
-            TM_PRINTF("DEBUG: Logger switch\n\r");
+            PRINTF("DEBUG: Logger switch\n\r");
             #endif
             }
             uint8_t activeBank = regs->SR & (1 << SR_BANK) ? 1 : 0;
@@ -219,35 +219,35 @@ void printLog(){
     uint32_t esize0 = logEntrySize(desc0), esize1 = logEntrySize(desc1);
     size_t size0 = regs->bankRegs[0].size * esize0, size1 = regs->bankRegs[1].size * esize1;
 
-    TM_PRINTF("log0\n\r");
+    PRINTF("log0\n\r");
     for(size_t i = 0; i < size0; i ++){
         if(i%2 == 0){
             uint32_t data = log0[i];
-            TM_PRINTF("%lu\t", data);
+            PRINTF("%lu\t", data);
         }else {
             int32_t data = ((int32_t *)log0)[i];
-            TM_PRINTF("%d\t", data);
+            PRINTF("%d\t", data);
         }
         if(i%esize0 == esize0-1){
-            TM_PRINTF("\n\r");
+            PRINTF("\n\r");
         }
     }
 
-    TM_PRINTF("log0x64\n\r");
+    PRINTF("log0x64\n\r");
     for(size_t i = 0; i < size0 / 2; i ++){
         int64_t data = ((int64_t *)log0)[i];
-        TM_PRINTF("%lld\t", data);
+        PRINTF("%lld\t", data);
         if(i%(esize0/2) == (esize0/2)-1){
-            TM_PRINTF("\n\r");
+            PRINTF("\n\r");
         }
     }
 
-    TM_PRINTF("log1\n\r");
+    PRINTF("log1\n\r");
     for(size_t i = 0; i < size1; i ++){
         uint32_t data = log1[i];
-        TM_PRINTF("%lu\t", data);
+        PRINTF("%lu\t", data);
         if(i%esize1 == esize1-1){
-            TM_PRINTF("\n\r");
+            PRINTF("\n\r");
         }
     }
 

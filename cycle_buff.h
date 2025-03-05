@@ -2,7 +2,7 @@
 #define _CYCLE_BUFF_H_
 #include "main.h"
 
-#define FIFO_SIZE       32
+#define FIFO_SIZE       512
 typedef struct 
 {
     uint32_t data[FIFO_SIZE];

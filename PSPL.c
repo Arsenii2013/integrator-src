@@ -25,11 +25,14 @@ void initPStoPL(){
     #ifndef TEST
     XGpioPs_Config *conf2 = XGpioPs_LookupConfig(XPAR_PS7_GPIO_0_DEVICE_ID);
     XGpioPs_CfgInitialize(&bank2, conf2, conf2->BaseAddr);
-
-    XGpioPs_SetDirection(&bank2, XGPIOPS_BANK2, AFE_CFG_MASK);
-    XGpioPs_SetOutputEnable(&bank2, XGPIOPS_BANK2, AFE_CFG_MASK);
-
-    XGpioPs_Write(&bank2, XGPIOPS_BANK2, 0x00000000);
+    
+    uint32_t conf_dir = XGpioPs_GetDirection(&bank2, XGPIOPS_BANK2) & ~(AFE_CFG_MASK);
+    XGpioPs_SetDirection(&bank2, XGPIOPS_BANK2, AFE_CFG_MASK | conf_dir);
+    XGpioPs_SetDirectionPin(&bank2, CONF_DONE_PIN, 0);
+    uint32_t conf_ena = XGpioPs_GetOutputEnable(&bank2, XGPIOPS_BANK2) & ~(AFE_CFG_MASK);
+    XGpioPs_SetOutputEnable(&bank2, XGPIOPS_BANK2, AFE_CFG_MASK | conf_ena);
+    uint32_t conf_val = XGpioPs_Read(&bank2, XGPIOPS_BANK2) & ~(AFE_CFG_MASK);
+    XGpioPs_Write(&bank2, XGPIOPS_BANK2, 0x00000000 | conf_val);
     #endif
 }
 

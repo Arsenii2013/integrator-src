@@ -32,18 +32,18 @@ void setRunSequence(){
     uint32_t ev[32] = {0}, 
              dl[32] = {0}, 
              cnt    = 0;
-    if(logRunning()){
-        ev[cnt] = EV_LOG_STOP;
+    if(AFERunning()){
+        ev[cnt] = EV_INT_STOP;
         dl[cnt] = 0;
         cnt++;
     }
-    if(AFERunning()){
-        ev[cnt] = EV_INT_STOP;
-        dl[cnt] = DL_LOG_STOP;
+    if(logRunning()){
+        ev[cnt] = EV_LOG_STOP;
+        dl[cnt] = DL_INT_STOP;
         cnt++;
     }
     ev[cnt] = EV_INT_ZERO;
-    dl[cnt] = DL_INT_STOP;
+    dl[cnt] = DL_LOG_STOP;
     cnt++;
     if(integralAnalog() && controlExtTrigCycCal()){ // if need calibration
         ev[cnt] = EV_INT_CAL;
@@ -58,7 +58,7 @@ void setRunSequence(){
         cnt++;
     }
     ev[cnt] = EV_LOG_START;
-    dl[cnt] = DL_INT_START;
+    dl[cnt] = DL_LOG_START;
     cnt++;
     seqSetEvents(ev, dl, cnt);
 }

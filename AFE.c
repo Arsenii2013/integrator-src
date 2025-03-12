@@ -19,10 +19,12 @@ static struct{
     float coeffDB;
     float coeffBA;
     float coeffBD;
-    uint32_t mode;
+    uint32_t input;
+    uint32_t DAC_ena;
+    uint32_t Bser_ena;
     uint32_t pulse_duration;
     uint32_t pause_duration;
-} IternalAFEData = {0, 0, 0, 1, 0, 0, 0., 0., 0., 0., 0., MFM_MODE_ANALOG_TO_ANALOG, 100, 200};
+} IternalAFEData = {0, 0, 0, 1, 0, 0, 0., 0., 0., 0., 0., MFM_INPUT_ANALOG, 1, 1, 100, 200};
 
 void MFMPrintRegs(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
@@ -126,33 +128,40 @@ void MFMSetPauseDuratuion(uint32_t val){
 void MFMRefreshCoeffs(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
 
-    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG){
-        uint64_t coeff = (1. / (IternalAFEData.coeffAB * IternalAFEData.coeffBA)) - 1;
-        regs->MFM.dac_coeff_hi = coeff >> 32;
-        regs->MFM.dac_coeff_low= coeff;
-    } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL){
-        uint64_t coeff = IternalAFEData.coeffBD / IternalAFEData.coeffAB ;
-        regs->MFM.bser_step_hi = coeff >> 32;
-        regs->MFM.bser_step_low= coeff;
-    } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
-        uint64_t coeff = (1. / (IternalAFEData.coeffDB * IternalAFEData.coeffBA)) - 1;
-        regs->MFM.dac_coeff_hi = coeff >> 32;
-        regs->MFM.dac_coeff_low= coeff;
-    } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_DIGITAL){
-        uint64_t coeff = IternalAFEData.coeffBD / IternalAFEData.coeffDB;
-        regs->MFM.bser_step_hi = coeff >> 32;
-        regs->MFM.bser_step_low= coeff;
-    }
+    if(IternalAFEData.input == MFM_INPUT_ANALOG){
+        uint64_t dac_coeff = (1. / (IternalAFEData.coeffAB * IternalAFEData.coeffBA)) - 1;
+        uint64_t bser_step = IternalAFEData.coeffBD / IternalAFEData.coeffDB;
+        if(IternalAFEData.DAC_ena) {
+            regs->MFM.dac_coeff_hi = dac_coeff >> 32;
+            regs->MFM.dac_coeff_low= dac_coeff;
+        }
+        if(IternalAFEData.Bser_ena) {
+            regs->MFM.bser_step_hi = bser_step >> 32;
+            regs->MFM.bser_step_low= bser_step;
+        }
+    } else if(IternalAFEData.input == MFM_INPUT_DIGITAL){
+        uint64_t dac_coeff = (1. / (IternalAFEData.coeffDB * IternalAFEData.coeffBA)) - 1;
+        uint64_t bser_step = IternalAFEData.coeffBD / IternalAFEData.coeffAB;
+        if(IternalAFEData.DAC_ena) {
+            regs->MFM.dac_coeff_hi = dac_coeff >> 32;
+            regs->MFM.dac_coeff_low= dac_coeff;
+        }
+        if(IternalAFEData.Bser_ena) {
+            regs->MFM.bser_step_hi = bser_step >> 32;
+            regs->MFM.bser_step_low= bser_step;
+        }
+    } 
 }
 
 void MFMRefreshOffset(){
     AFERegs* regs = (AFERegs*) REGS_BASE_AFE;
-
-    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG || IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
-        regs->MFM.dac_offset = IternalAFEData.B0 * IternalAFEData.coeffBA;
-    }
-    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL || IternalAFEData.mode == MFM_MODE_DIGITAL_TO_DIGITAL){
-        regs->MFM.dac_offset = 0;
+    if(IternalAFEData.DAC_ena) {
+        if(IternalAFEData.input == MFM_INPUT_ANALOG){
+            regs->MFM.dac_offset = IternalAFEData.B0 * IternalAFEData.coeffBA;
+        }
+        if(IternalAFEData.input == MFM_INPUT_DIGITAL){
+            regs->MFM.dac_offset = 0;
+        }
     }
 }
 
@@ -161,18 +170,28 @@ void MFMRefreshMode(){
     uint32_t DAC_ctrl  = regs->MFM.dac_ctrl_reg & 0xffffffffc;
     uint32_t Bser_ctrl = regs->MFM.bser_ctrl_reg & 0xffffffffc;
 
-    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG){
-        DAC_ctrl |= MFM_SOURCE_ANALOG;
-        Bser_ctrl|= MFM_SOURCE_ZERO;
-    } else if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL){
-        DAC_ctrl |= MFM_SOURCE_ZERO;
-        Bser_ctrl|= MFM_SOURCE_ANALOG;
-    } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG){
-        DAC_ctrl |= MFM_SOURCE_BSER;
-        Bser_ctrl|= MFM_SOURCE_ZERO;
-    } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_DIGITAL){
-        DAC_ctrl |= MFM_SOURCE_ZERO;
-        Bser_ctrl|= MFM_SOURCE_BSER;
+    if(IternalAFEData.input == MFM_INPUT_ANALOG){
+        if(IternalAFEData.DAC_ena) {
+            DAC_ctrl |= MFM_SOURCE_ANALOG;
+        } else {
+            DAC_ctrl |= MFM_SOURCE_ZERO;
+        }
+        if(IternalAFEData.Bser_ena) {
+            Bser_ctrl|= MFM_SOURCE_ANALOG;
+        } else {
+            Bser_ctrl|= MFM_SOURCE_ZERO;
+        }
+    } else if(IternalAFEData.input == MFM_INPUT_DIGITAL){
+        if(IternalAFEData.DAC_ena) {
+            DAC_ctrl |= MFM_SOURCE_BSER;
+        } else {
+            DAC_ctrl |= MFM_SOURCE_ZERO;
+        }
+        if(IternalAFEData.Bser_ena) {
+            Bser_ctrl|= MFM_SOURCE_BSER;
+        } else {
+            Bser_ctrl|= MFM_SOURCE_ZERO;
+        }
     }
     regs->MFM.dac_ctrl_reg  = DAC_ctrl;
     regs->MFM.bser_ctrl_reg = Bser_ctrl;
@@ -300,8 +319,20 @@ int AFEDDS_SYNC(void*){
     }
 
     if(!IternalAFEData.operation){
-        if(IternalAFEData.mode != controlMode()){
-            IternalAFEData.mode = controlMode();
+        if(IternalAFEData.input != controlInput()){
+            IternalAFEData.input = controlInput();
+            MFMRefreshMode();
+            MFMRefreshCoeffs();
+            MFMRefreshOffset();
+        }
+        if(IternalAFEData.DAC_ena != controlDACEna()){
+            IternalAFEData.DAC_ena = controlDACEna();
+            MFMRefreshMode();
+            MFMRefreshCoeffs();
+            MFMRefreshOffset();
+        }
+        if(IternalAFEData.Bser_ena != controlBserEna()){
+            IternalAFEData.Bser_ena = controlBserEna();
             MFMRefreshMode();
             MFMRefreshCoeffs();
         }
@@ -339,10 +370,10 @@ int64_t MFMGetIntegral(){
     uint64_t intH = 0;
     uint32_t intL = 0;
 
-    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG || IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL){
+    if(IternalAFEData.input == MFM_INPUT_ANALOG){
         intH = regs->MFM.mf_ana_i_hi;
         intL = regs->MFM.mf_ana_i_low;
-    } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG || IternalAFEData.mode == MFM_MODE_DIGITAL_TO_DIGITAL){
+    } else if(IternalAFEData.input == MFM_INPUT_DIGITAL){
         intH = regs->MFM.mf_dig_i_hi;
         intL = regs->MFM.mf_dig_i_low;
     }
@@ -352,9 +383,9 @@ int64_t MFMGetIntegral(){
 }
 
 float MFMGetB(){
-    if(IternalAFEData.mode == MFM_MODE_ANALOG_TO_ANALOG || IternalAFEData.mode == MFM_MODE_ANALOG_TO_DIGITAL){
+    if(IternalAFEData.input == MFM_INPUT_ANALOG){
         return (float)IternalAFEData.coeffAB * (float)((double)MFMGetIntegral()) + IternalAFEData.B0;
-    } else if(IternalAFEData.mode == MFM_MODE_DIGITAL_TO_ANALOG || IternalAFEData.mode == MFM_MODE_DIGITAL_TO_DIGITAL){
+    } else if(IternalAFEData.input == MFM_INPUT_DIGITAL){
         return (float)IternalAFEData.coeffDB * (float)((double)MFMGetIntegral()) + IternalAFEData.B0;
     }
     return 0.f;

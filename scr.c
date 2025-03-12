@@ -29,7 +29,7 @@ void initSCR(){
     REGS_BASE_SCR->STOP_EV[3] = 0;
     REGS_BASE_SCR->ZERO_EV = 0;
     REGS_BASE_SCR->CALIBRATION_EV = 0;
-    REGS_BASE_SCR->MODE = 0;
+    REGS_BASE_SCR->MODE = 0b110;
     REGS_BASE_SCR->EXT = 1 << EXT_CYCLE_CAL;
     REGS_BASE_SCR->K_ANALOG_TO_B = 0;
     REGS_BASE_SCR->BSER_IN = 0;
@@ -322,10 +322,19 @@ float controlBserOut(){
     return *(float*)&regs->BSER_OUT;
 }
 
-
-uint32_t controlMode(){
+uint32_t controlInput(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->MODE;
+    return regs->MODE & (1 << MODE_INPUT);
+}
+
+uint32_t controlDACEna(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->MODE & (1 << MODE_DAC_ENA);
+}
+
+uint32_t controlBserEna(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->MODE & (1 << MODE_BSER_ENA);
 }
 
 uint32_t controlPulseDuration(){

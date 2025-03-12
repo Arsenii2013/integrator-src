@@ -22,7 +22,7 @@ void trigSetEvSource(uint32_t mode){
 }
 
 uint32_t integralAnalog(){
-    return controlMode() == MFM_MODE_ANALOG_TO_ANALOG || controlMode() == MFM_MODE_ANALOG_TO_DIGITAL;
+    return controlInput() == MFM_INPUT_ANALOG;
 }
 
 void setRunSequence(){

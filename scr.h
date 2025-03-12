@@ -27,21 +27,21 @@ typedef struct
     uint32_t PAUSE_DURATION;
 } statusControlRegisters;
 
-#define SR_RUN      0
-#define SR_CAL_RUN  1
-#define SR_ERROR    2
-#define SR_INITDONE 3
+#define SR_RUN              0
+#define SR_CAL_RUN          1
+#define SR_ERROR            2
+#define SR_INITDONE         3
 
-#define CR_CLEAR      0
+#define CR_CLEAR            0
 
-#define EXT_EXT       0
-#define EXT_CYCLE_CAL 1
-#define EXT_CAL       2
-#define EXT_SOFT      3
+#define EXT_EXT             0
+#define EXT_CYCLE_CAL       1
+#define EXT_CAL             2
+#define EXT_SOFT            3
 
-#define HP_ERR_TIME       0
-#define HP_ERR_OVERFLOW   1
-#define HP_ERR_INVALID    2
+#define HP_ERR_TIME         0
+#define HP_ERR_OVERFLOW     1
+#define HP_ERR_INVALID      2
 
 #define AFE_ERR_CALIBRATION 0
 #define AFE_ERR_STARTSTOP   1
@@ -55,6 +55,10 @@ typedef struct
 #define LOG_ERR_STOPSTOP    2
 #define LOG_ERR_STARTSTART  3
 #define LOG_ERR_OVERFLOW    4
+
+#define MODE_INPUT          0
+#define MODE_DAC_ENA        1
+#define MODE_BSER_ENA       2
 
 void statusRun(uint32_t state);
 void statusCalRun(uint32_t state);
@@ -90,7 +94,9 @@ float controlBserIn();
 float controlCoeffBA();
 float controlBserOut();
 
-uint32_t controlMode();
+uint32_t controlInput();
+uint32_t controlDACEna();
+uint32_t controlBserEna();
 
 uint32_t controlExtTrig();
 uint32_t controlExtTrigCycCal();

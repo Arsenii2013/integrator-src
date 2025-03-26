@@ -10,7 +10,7 @@
 #endif
 
 //logRegs * REGS_BASE_LOG = 0x40000000 + 0x1C00;
-static volatile logRegs * REGS_BASE_LOG = (logRegs *)0x3A000000;
+static volatile logRegs * REGS_BASE_LOG = (logRegs *)0xFFFC0000;
 
 static uint32_t * bankAddrs [BANK_NUM] = {(uint32_t *)0x00000000, (uint32_t *)0x10000000};
 static uint32_t bankCnt [BANK_NUM] = {0, 0};
@@ -45,12 +45,23 @@ void loggerInit(){
     bankAddrs[1] = malloc(sizeof(logEntry) * BANK_MAX_SIZE);
     REGS_BASE_LOG    = malloc(sizeof(logRegs));
     #endif
-
-    const logRegs defaults = {.SR = 1 << SR_IDLE, .CR = 0, .CR_S = 0, .CR_C = 0, .CFG = 0, .DCM = 0, .START = {0, 0}, .STOP = {0, 0},
-         .bankRegs[0] = {.cfg = 0, .dcm = 0, .size = 0}, .bankRegs[1] = {.cfg = 0, .dcm = 0, .size = 0},
-    };
-
-    *REGS_BASE_LOG = defaults;
+    REGS_BASE_LOG->SR = 1 << SR_IDLE;
+    REGS_BASE_LOG->CR = 0;
+    REGS_BASE_LOG->CR_S = 0;
+    REGS_BASE_LOG->CR_C = 0;
+    REGS_BASE_LOG->CFG = 0;
+    REGS_BASE_LOG->DCM = 0;
+    REGS_BASE_LOG->START[0] = 0;
+    REGS_BASE_LOG->START[1] = 0;
+    REGS_BASE_LOG->STOP[0] = 0;
+    REGS_BASE_LOG->STOP[1] = 0;
+    REGS_BASE_LOG->bankRegs[0].cfg = 0;
+    REGS_BASE_LOG->bankRegs[0].dcm = 0;
+    REGS_BASE_LOG->bankRegs[0].size = 0;
+    REGS_BASE_LOG->bankRegs[1].cfg = 0;
+    REGS_BASE_LOG->bankRegs[1].dcm = 0;
+    REGS_BASE_LOG->bankRegs[1].size = 0;
+    //Xil_DCacheFlushRange((intptr_t)REGS_BASE_LOG, sizeof(logRegs));
 }
 
 size_t writeEntry(logEntry e, void * addr){

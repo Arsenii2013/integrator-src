@@ -16,6 +16,7 @@
 
 #ifndef TEST
 #include "xil_cache.h"    
+#include "xil_mmu.h"    
 #endif
 
 int DDS_SYNCPrint(void *){
@@ -69,7 +70,9 @@ int DDS_SYNCApp(void*){
 
         logIntegrator e = {.B = *(uint32_t *)&B, .ADC = ADC, .DAC = DAC, .integral_low = intergral, .integral_high = intergral >> 32};
         //PRINTF("%x, %x, %x, %x\n\r", e.B, e.ADC, e.integral_low, e.integral_high);
-        logg(*(logEntry *) &e);
+        if(logRunning()){
+            logg(*(logEntry *) &e);
+        }
     }
     return 0;
 }
@@ -121,7 +124,8 @@ int main()
     testGenInit(events, cycles, eventsN, repeat);
     AFEEmulinit();
     #else
-    
+    *((uint32_t *)0xF8000910) = 0x1f; // remap ocm
+    Xil_SetTlbAttributes(0xFFF00000,0x10C06);
     init_platform();
     initPStoPL();
     PRINTF("start\n\r");

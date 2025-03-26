@@ -14,7 +14,7 @@
 #define DL_INT_STOP  1
 #define DL_LOG_STOP  1
 #define DL_INT_ZERO  1
-#define DL_INT_CAL   5000
+#define DL_INT_CAL   10000
 #define DL_LOG_START 1
 
 void seqSetEvents(uint32_t * newEvents, uint32_t * newDelays, uint32_t cnt);

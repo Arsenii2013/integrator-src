@@ -12,7 +12,7 @@
 //logRegs * REGS_BASE_LOG = 0x40000000 + 0x1C00;
 static volatile logRegs * REGS_BASE_LOG = (logRegs *)0xFFFC0000;
 
-static uint32_t * bankAddrs [BANK_NUM] = {(uint32_t *)0x00000000, (uint32_t *)0x10000000};
+static uint32_t * bankAddrs [BANK_NUM] = {(uint32_t *)0x00100000, (uint32_t *)0x10100000};
 static uint32_t bankCnt [BANK_NUM] = {0, 0};
 
 static uint32_t startLog = 0;
@@ -78,7 +78,7 @@ size_t writeEntry(logEntry e, void * addr){
         }
     }
     #ifndef TEST
-    //Xil_DCacheFlushRange((intptr_t)addr, writed*4);
+    Xil_DCacheFlushRange((intptr_t)addr, writed*4);
     #endif
     return writed;
 }

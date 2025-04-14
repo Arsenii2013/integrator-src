@@ -111,6 +111,10 @@ void PCIELoggerSetup(){
 }
 #endif
 
+void SCUInit(){
+    Xil_SetTlbAttributes(0xFFF00000,0x15DE6);
+}
+
 int main()
 {
     cyclicBuffer ev_buff = {.size = 0, .start = 0, .data = {0}};
@@ -124,11 +128,11 @@ int main()
     testGenInit(events, cycles, eventsN, repeat);
     AFEEmulinit();
     #else
-    *((uint32_t *)0xF8000910) = 0x1f; // remap ocm
-    Xil_SetTlbAttributes(0xFFF00000,0x10C06);
     init_platform();
+    SCUInit();
     initPStoPL();
     PRINTF("start\n\r");
+
     #ifdef DEBUG
     volatile uint32_t tmp = readEvent();
     PRINTF("%d\n\r", tmp);

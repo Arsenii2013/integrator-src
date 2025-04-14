@@ -130,7 +130,7 @@ void MFMRefreshCoeffs(){
 
     if(IternalAFEData.input == MFM_INPUT_ANALOG){
         uint64_t dac_coeff = (1. / (IternalAFEData.coeffAB * IternalAFEData.coeffBA)) - 1;
-        uint64_t bser_step = IternalAFEData.coeffBD / IternalAFEData.coeffDB;
+        uint64_t bser_step = IternalAFEData.coeffBD / IternalAFEData.coeffAB;
         if(IternalAFEData.DAC_ena) {
             regs->MFM.dac_coeff_hi = dac_coeff >> 32;
             regs->MFM.dac_coeff_low= dac_coeff;
@@ -141,7 +141,7 @@ void MFMRefreshCoeffs(){
         }
     } else if(IternalAFEData.input == MFM_INPUT_DIGITAL){
         uint64_t dac_coeff = (1. / (IternalAFEData.coeffDB * IternalAFEData.coeffBA)) - 1;
-        uint64_t bser_step = IternalAFEData.coeffBD / IternalAFEData.coeffAB;
+        uint64_t bser_step = IternalAFEData.coeffBD / IternalAFEData.coeffDB;
         if(IternalAFEData.DAC_ena) {
             regs->MFM.dac_coeff_hi = dac_coeff >> 32;
             regs->MFM.dac_coeff_low= dac_coeff;

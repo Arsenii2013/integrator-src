@@ -22,28 +22,28 @@ void trigSetEvSource(uint32_t mode){
 }
 
 uint32_t integralAnalog(){
-    return controlMode() == MFM_MODE_ANALOG_TO_ANALOG || controlMode() == MFM_MODE_ANALOG_TO_DIGITAL;
+    return controlInput() == MFM_INPUT_ANALOG;
 }
 
 void setRunSequence(){
     #ifdef DEBUG
-    TM_PRINTF("run\n\r");
+    PRINTF("DEBUG: ext trig integrate\n\r");
     #endif
     uint32_t ev[32] = {0}, 
              dl[32] = {0}, 
              cnt    = 0;
-    if(logRunning()){
-        ev[cnt] = EV_LOG_STOP;
+    if(AFERunning()){
+        ev[cnt] = EV_INT_STOP;
         dl[cnt] = 0;
         cnt++;
     }
-    if(AFERunning()){
-        ev[cnt] = EV_INT_STOP;
-        dl[cnt] = DL_LOG_STOP;
+    if(logRunning()){
+        ev[cnt] = EV_LOG_STOP;
+        dl[cnt] = DL_INT_STOP;
         cnt++;
     }
     ev[cnt] = EV_INT_ZERO;
-    dl[cnt] = DL_INT_STOP;
+    dl[cnt] = DL_LOG_STOP;
     cnt++;
     if(integralAnalog() && controlExtTrigCycCal()){ // if need calibration
         ev[cnt] = EV_INT_CAL;
@@ -58,14 +58,14 @@ void setRunSequence(){
         cnt++;
     }
     ev[cnt] = EV_LOG_START;
-    dl[cnt] = DL_INT_START;
+    dl[cnt] = DL_LOG_START;
     cnt++;
     seqSetEvents(ev, dl, cnt);
 }
 
 void setSwitchSequence(uint32_t mode_from, uint32_t mode_to){
     #ifdef DEBUG
-    TM_PRINTF("trig sw\n\r");
+    PRINTF("DEBUG: ext trig mode change\n\r");
     #endif
     uint32_t ev[32] = {0}, 
              dl[32] = {0}, 
@@ -91,7 +91,7 @@ void setSwitchSequence(uint32_t mode_from, uint32_t mode_to){
 
 void setCalibrationSequence(){
     #ifdef DEBUG
-    TM_PRINTF("cal\n\r");
+    PRINTF("DEBUG: ext trig calibration\n\r");
     #endif
     uint32_t ev[32] = {0}, 
              dl[32] = {0}, 

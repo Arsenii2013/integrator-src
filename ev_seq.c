@@ -9,16 +9,10 @@ static struct {
 } iternalSeqData = {0, {0}, {0}, 0};
 
 void seqStart(){
-    #ifdef DEBUG
-    TM_PRINTF("seq start\n\r");
-    #endif
     iternalSeqData.running = 1;
 }
 
 void seqStop(){
-    #ifdef DEBUG
-    TM_PRINTF("seq stop\n\r");
-    #endif
     iternalSeqData.running = 0;
 }
 
@@ -64,7 +58,7 @@ uint32_t seqReadEvents(cyclicBuffer * buff){
         i++;
     }
     if(i > 1){
-        TM_PRINTF("CRIT ERROR: more thah one event in external trigger cycle\n\r");
+        PRINTF("CRIT ERROR: more thah one event in external trigger cycle\n\r");
     }
     return i;
 }

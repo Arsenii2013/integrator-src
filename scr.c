@@ -4,7 +4,7 @@
 #endif
 
 //statusControlRegisters * REGS_BASE_SCR = 0x40000000 + 0x2000;
-static volatile statusControlRegisters * REGS_BASE_SCR = (statusControlRegisters *)0x3A001000;
+static volatile statusControlRegisters * REGS_BASE_SCR = (statusControlRegisters *)0xFFFC1000;
 
 void initSCR(){
     #ifdef TEST
@@ -12,7 +12,7 @@ void initSCR(){
         statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     #endif
     REGS_BASE_SCR->SR = 0;
-    REGS_BASE_SCR->CR = 1 << CR_AFE_PWR;
+    REGS_BASE_SCR->CR = 0;
     REGS_BASE_SCR->CR_S = 0;
     REGS_BASE_SCR->CR_C = 0;
     REGS_BASE_SCR->AFE_ERR = 0;
@@ -29,12 +29,14 @@ void initSCR(){
     REGS_BASE_SCR->STOP_EV[3] = 0;
     REGS_BASE_SCR->ZERO_EV = 0;
     REGS_BASE_SCR->CALIBRATION_EV = 0;
-    REGS_BASE_SCR->MODE = 0;
+    REGS_BASE_SCR->MODE = 0b110;
     REGS_BASE_SCR->EXT = 1 << EXT_CYCLE_CAL;
     REGS_BASE_SCR->K_ANALOG_TO_B = 0;
     REGS_BASE_SCR->BSER_IN = 0;
     REGS_BASE_SCR->K_B_TO_ANALOG = 0;
     REGS_BASE_SCR->BSER_OUT = 0;
+    REGS_BASE_SCR->PULSE_DURATION = 100;
+    REGS_BASE_SCR->PAUSE_DURATION = 200;
 }
 
 volatile statusControlRegisters * SCRegPtr(){
@@ -47,30 +49,69 @@ void flushIfnTEST(){
     #endif
 }
 
-void statusNotEnoughtTime(){
+void statusError(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    regs->SR |= 1 << SR_TIME;
+    regs->SR |= 1 << SR_ERROR;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: events were not processed in one DDS_SYNC cycle\n\r");
+    //PRINTF("DEBUG: any error\n\r");
+    #endif
+}
+void statusRun(uint32_t state){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    if(state){
+        regs->SR |= 1 << SR_RUN;
+    }else{
+        regs->SR &= ~(1 << SR_RUN);
+    }
+    flushIfnTEST();
+}
+void statusCalRun(uint32_t state){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    if(state){
+        regs->SR |= 1 << SR_CAL_RUN;
+    }else{
+        regs->SR &= ~(1 << SR_CAL_RUN);
+    }
+    flushIfnTEST();
+}
+void statusAFEInitdone(uint32_t state){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    if(state){
+        regs->SR |= 1 << SR_INITDONE;
+    }else{
+        regs->SR &= ~(1 << SR_INITDONE);
+    }
+    flushIfnTEST();
+}
+
+void statusNotEnoughtTime(){
+    statusError();
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    regs->HP_ERR |= 1 << HP_ERR_TIME;
+    flushIfnTEST();
+    #ifdef DEBUG
+    //PRINTF("DEBUG: events were not processed in one DDS_SYNC cycle\n\r");
     #endif
 }
 
 void statusOverflowEvents(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    regs->SR |= 1 << SR_OVERFLOW;
+    regs->HP_ERR |= 1 << HP_ERR_OVERFLOW;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: event fifo overflow\n\r");
+    //PRINTF("DEBUG: event fifo overflow\n\r");
     #endif
 }
 
 void statusInvalidEvents(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    regs->SR |= 1 << SR_INVALID;
+    regs->HP_ERR |= 1 << HP_ERR_INVALID;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: invalid events sequnce\n\r");
+    PRINTF("DEBUG: invalid events sequnce\n\r");
     #endif
 }
 
@@ -85,7 +126,7 @@ int controlDDS_SYNC(void*){
 
     if(regs->CR & 0x1){
         regs->CR &= ~0x1;
-        regs->SR = 0;
+        regs->SR &= ~(1 << SR_ERROR);
         regs->AFE_ERR = 0;
         regs->LOG_ERR = 0;
         regs->HP_ERR = 0;
@@ -94,35 +135,39 @@ int controlDDS_SYNC(void*){
 }
 
 void statusAFEStartStop(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR |= 1 << AFE_ERR_STARTSTOP;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: AFE: start and stop in one DDS_SYNC cycle\n\r");
+    PRINTF("DEBUG: AFE: start and stop in one DDS_SYNC cycle\n\r");
     #endif
 }
 void statusAFEStopStop(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR |= 1 << AFE_ERR_STOPSTOP;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: AFE: try to stop stopped integral\n\r");
+    PRINTF("DEBUG: AFE: try to stop stopped integral\n\r");
     #endif
 }
 void statusAFEStartStart(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR |= 1 << AFE_ERR_STARTSTART;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: AFE: try to start running integral\n\r");
+    PRINTF("DEBUG: AFE: try to start running integral\n\r");
     #endif
 }
 void statusAFECallibration(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR |= 1 << AFE_ERR_CALIBRATION;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: AFE: try to handle while callibration\n\r");
+    PRINTF("DEBUG: AFE: try to handle while callibration\n\r");
     #endif
 }
 
@@ -130,59 +175,64 @@ void statusAFEState(uint32_t AFEState){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->AFE_ERR = (regs->AFE_ERR & ~(0b111 << AFE_ERR_STATE)) | AFEState << AFE_ERR_STATE;
     flushIfnTEST();
+}
+
+void statusAFENotInited(){
+    statusError();
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    regs->AFE_ERR |= 1 << AFE_ERR_INIT;
+    flushIfnTEST();
     #ifdef DEBUG
-    if(AFEState != 0){
-        TM_PRINTF("DEBUG: AFE: state = %x\n\r", AFEState);
-    }
+    PRINTF("DEBUG: AFE: try to handle while callibration\n\r");
     #endif
 }
 
 void statusLogStartStop(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_STARTSTOP;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: LOG: start and stop in one DDS_SYNC cycle\n\r");
+    PRINTF("DEBUG: LOG: start and stop in one DDS_SYNC cycle\n\r");
     #endif
 }
 void statusLogStopStop(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_STOPSTOP;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: LOG: try to stop stopped log\n\r");
+    PRINTF("DEBUG: LOG: try to stop stopped log\n\r");
     #endif
 }
 void statusLogStartStart(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_STARTSTART;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: LOG: try to start running log\n\r");
+    PRINTF("DEBUG: LOG: try to start running log\n\r");
     #endif
 }
 void statusLogSwitch(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_SWITCH;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: LOG: try to switch bank while running\n\r");
+    PRINTF("DEBUG: LOG: try to switch bank while running\n\r");
     #endif
 }
 
 
 void statusLogOverflow(){
+    statusError();
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
     regs->LOG_ERR |= 1 << LOG_ERR_OVERFLOW;
     flushIfnTEST();
     #ifdef DEBUG
-    TM_PRINTF("DEBUG: LOG: bank overflow\n\r");
+    PRINTF("DEBUG: LOG: bank overflow\n\r");
     #endif
-}
-
-uint32_t controlAFEPwr(){
-    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->CR & (1 << CR_AFE_PWR);
 }
 
 uint32_t controlExtTrig(){
@@ -220,9 +270,6 @@ void statusExtTrigCal(){
 
 uint32_t controlStartEv(uint32_t i){
     if(i > SCR_EVENTS_N){
-        #ifdef DEBUG
-        TM_PRINTF("DEBUG: control registers read err\n\r");
-        #endif
         return 0;
     }
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
@@ -231,9 +278,6 @@ uint32_t controlStartEv(uint32_t i){
 
 uint32_t controlStopEv(uint32_t i){
     if(i > SCR_EVENTS_N){
-        #ifdef DEBUG
-        TM_PRINTF("DEBUG: control registers read err\n\r");
-        #endif
         return 0;
     }
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
@@ -278,8 +322,26 @@ float controlBserOut(){
     return *(float*)&regs->BSER_OUT;
 }
 
-
-uint32_t controlMode(){
+uint32_t controlInput(){
     statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
-    return regs->MODE;
+    return regs->MODE & (1 << MODE_INPUT);
+}
+
+uint32_t controlDACEna(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->MODE & (1 << MODE_DAC_ENA);
+}
+
+uint32_t controlBserEna(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->MODE & (1 << MODE_BSER_ENA);
+}
+
+uint32_t controlPulseDuration(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->PULSE_DURATION;
+}
+uint32_t controlPauseDuration(){
+    statusControlRegisters* regs = (statusControlRegisters*) REGS_BASE_SCR;
+    return regs->PAUSE_DURATION;
 }

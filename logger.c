@@ -1,12 +1,23 @@
 #include "logger.h"
+#include "scr.h"
+#include "ext_trig.h"
+#include "ev_seq.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifndef TEST
+#include "xil_cache.h"
+#endif
 
-logRegs * REGS_BASE;
+//logRegs * REGS_BASE_LOG = 0x40000000 + 0x1C00;
+static volatile logRegs * REGS_BASE_LOG = (logRegs *)0xFFFC0000;
 
-void * bankAddrs [BANK_NUM] = {0x100000, 0x200000};
-uint32_t bankCnt [BANK_NUM] = {0, 0};
+static uint32_t * bankAddrs [BANK_NUM] = {(uint32_t *)0x00100000, (uint32_t *)0x10100000};
+static uint32_t bankCnt [BANK_NUM] = {0, 0};
+
+static uint32_t startLog = 0;
+static uint32_t stopLog = 0;
+static uint32_t switchLog = 0;
 
 uint32_t logEntrySize(uint32_t desc){
     uint32_t count = 0;
@@ -15,8 +26,8 @@ uint32_t logEntrySize(uint32_t desc){
     return count;
 }
 
-logRegs * loggerRegPtr(){
-    return REGS_BASE;
+volatile logRegs * loggerRegPtr(){
+    return REGS_BASE_LOG;
 }
 
 void saveLog(){
@@ -24,28 +35,33 @@ void saveLog(){
 }
 
 uint32_t logRunning(){
-    logRegs* regs = (logRegs*) REGS_BASE;
-    return !(regs->SR & 1 << SR_IDLE);
+    logRegs* regs = (logRegs*) REGS_BASE_LOG;
+    return !(regs->SR & (1 << SR_IDLE));
 }
 
 void loggerInit(){
     #ifdef TEST
     bankAddrs[0] = malloc(sizeof(logEntry) * BANK_MAX_SIZE);
     bankAddrs[1] = malloc(sizeof(logEntry) * BANK_MAX_SIZE);
-    REGS_BASE    = malloc(sizeof(logRegs));
+    REGS_BASE_LOG    = malloc(sizeof(logRegs));
     #endif
-
-    /*const logRegs defaults = {.SR = 1, .CR = 0, .CR_S = 0, .CR_C = 0, .CFG = 0, .DCM = 0, .START = {0, 0}, .STOP = {0, 0},
-         .bankRegs = {
-            {.cfg = 0, .dcm = 0, .size = 0}, 
-            {.cfg = 0, .dcm = 0, .size = 0}
-        }
-    };*/
-
-    REGS_BASE->SR = 1 << SR_IDLE;
-    REGS_BASE->CR = 0;
-    REGS_BASE->CR_C = 0;
-    REGS_BASE->CR_S = 0;
+    REGS_BASE_LOG->SR = 1 << SR_IDLE;
+    REGS_BASE_LOG->CR = 0;
+    REGS_BASE_LOG->CR_S = 0;
+    REGS_BASE_LOG->CR_C = 0;
+    REGS_BASE_LOG->CFG = 0;
+    REGS_BASE_LOG->DCM = 0;
+    REGS_BASE_LOG->START[0] = 0;
+    REGS_BASE_LOG->START[1] = 0;
+    REGS_BASE_LOG->STOP[0] = 0;
+    REGS_BASE_LOG->STOP[1] = 0;
+    REGS_BASE_LOG->bankRegs[0].cfg = 0;
+    REGS_BASE_LOG->bankRegs[0].dcm = 0;
+    REGS_BASE_LOG->bankRegs[0].size = 0;
+    REGS_BASE_LOG->bankRegs[1].cfg = 0;
+    REGS_BASE_LOG->bankRegs[1].dcm = 0;
+    REGS_BASE_LOG->bankRegs[1].size = 0;
+    //Xil_DCacheFlushRange((intptr_t)REGS_BASE_LOG, sizeof(logRegs));
 }
 
 size_t writeEntry(logEntry e, void * addr){
@@ -61,29 +77,47 @@ size_t writeEntry(logEntry e, void * addr){
             writed++;
         }
     }
+    #ifndef TEST
+    Xil_DCacheFlushRange((intptr_t)addr, writed*4);
+    #endif
     return writed;
 }
 
+uint32_t integratorCfgConvert(uint32_t cfg){
+    uint32_t bits = 0b0001; // показывает битность каждого параметра
+    uint32_t res = 0;
+    for(int i = 0, j = 0; (i < 32) && (j < 32); i++){
+        if(cfg & 1 << i) {
+            res |= 1 << j;
+        }
+        j ++;
+        if(bits & 1 << i){ // 64
+            if(cfg & 1 << i) {
+                res |= 1 << j;
+            }
+            j ++;
+        }
+    }
+    return res;
+}
+
 void logg(logEntry e){
-    logRegs* regs = (logRegs*) REGS_BASE;
+    logRegs* regs = (logRegs*) REGS_BASE_LOG;
     uint8_t activeBank = regs->SR & (1 << SR_BANK) ? 1 : 0;
     
     if(!logRunning()){
-        #ifdef DEBUG
-        TM_PRINTF("DEBUG: try write stopped log\n");
-        #endif
+        PRINTF("ERROR: try write stopped log\n\r");
         return;
     }
     if(bankCnt[activeBank] == 0){
-        if(regs->bankRegs[activeBank].size == BANK_MAX_SIZE){
-            #ifdef DEBUG
-            TM_PRINTF("DEBUG: bank %d overflow\n", activeBank);
-            #endif
+        e.desc = integratorCfgConvert(regs->bankRegs[activeBank].cfg);
+        uint32_t sz = logEntrySize(e.desc);
+        if(regs->bankRegs[activeBank].size + sz >= BANK_MAX_SIZE){
+            statusLogOverflow();
             return;
         }
-        e.desc = regs->bankRegs[activeBank].cfg;
-        writeEntry(e, bankAddrs[activeBank] + regs->bankRegs[activeBank].size * logEntrySize(regs->bankRegs[activeBank].cfg) * 4);
-        regs->bankRegs[activeBank].size ++;
+        writeEntry(e, bankAddrs[activeBank] + regs->bankRegs[activeBank].size);
+        regs->bankRegs[activeBank].size += sz;
         bankCnt[activeBank] = regs->bankRegs[activeBank].dcm;
     } else {
         bankCnt[activeBank] --;
@@ -91,105 +125,140 @@ void logg(logEntry e){
 }
 
 int loggerDDS_SYNC(void*){
-    logRegs* regs = (logRegs*) REGS_BASE;
+    logRegs* regs = (logRegs*) REGS_BASE_LOG;
 
-    uint32_t CRStart = (regs->CR & (1 << CR_START )) || (regs->CR_S & (1 << CR_START ));
-    uint32_t CRStop  = (regs->CR & (1 << CR_STOP  )) || (regs->CR_S & (1 << CR_STOP  ));
+    regs->CR |= regs->CR_S;
+    regs->CR &= ~regs->CR_C;
+    regs->CR_S = 0;
+    regs->CR_C = 0;
+
+    uint32_t CRStart  = (regs->CR & (1 << CR_START )) | startLog;
+    uint32_t CRStop   = (regs->CR & (1 << CR_STOP  )) | stopLog;
+    uint32_t CRSwitch = (regs->CR & (1 << CR_SWITCH)) | switchLog;
 
     uint32_t running = !(regs->SR & (1 << SR_IDLE)); 
 
+    if(CRStart && CRStop){
+        statusLogStartStop();
+        return -1;
+    }
+
     if(running){
         if(CRStop){
+            #ifdef DEBUG
+            PRINTF("DEBUG: Logger stop\n\r");
+            #endif
             regs->SR |= (1 << SR_IDLE);
-            regs->CR &= ~(1 << CR_STOP);
-            if((regs->CR >> CR_MODE) & 0b01){
-                regs->CR |= 1 << CR_SWITCH;
-            }
         }
-        #ifdef DEBUG
         if(CRStart){
-            TM_PRINTF("DEBUG: try to start running log\n");
-            return -1;
+            statusLogStartStart();
         }
-        #endif
     }else{
         if(CRStart){
+            #ifdef DEBUG
+            PRINTF("DEBUG: Logger start\n\r");
+            #endif
             regs->SR &= ~(1 << SR_IDLE);
-            regs->CR &= ~(1 << CR_START);
+            if(CRSwitch){
+                regs->SR   ^= (1 << SR_BANK);
+                switchLog  = 0; 
+                regs->CR   &= ~(1 << CR_SWITCH);
+            #ifdef DEBUG
+            PRINTF("DEBUG: Logger switch\n\r");
+            #endif
+            }
             uint8_t activeBank = regs->SR & (1 << SR_BANK) ? 1 : 0;
             regs->bankRegs[activeBank].dcm = regs->DCM;
             regs->bankRegs[activeBank].cfg = regs->CFG;
             regs->bankRegs[activeBank].size= 0;
         }
-        #ifdef DEBUG
         if(CRStop){
-            TM_PRINTF("DEBUG: try to stop stopped log\n");
-            return -1;
+            statusLogStopStop();
         }
-        #endif
     }
 
-    uint32_t CRSwitch = (regs->CR & (1 << CR_SWITCH)) || (regs->CR_S & (1 << CR_SWITCH));
-    if(CRSwitch){
-        regs->SR ^= (1 << SR_BANK);
-    }
 
+    regs->CR   &= ~((1 << CR_START) | (1 << CR_STOP));
+    startLog = 0;
+    stopLog  = 0;
     return 0;
 }
 
 int loggerEvent(uint32_t ev, void*){
-    logRegs* regs = (logRegs*) REGS_BASE;
-    if(regs->SR & (1 << SR_IDLE)){ // лог остановлен
+    logRegs* regs = (logRegs*) REGS_BASE_LOG;
+    if(ev == 0){
+        return 0;
+    }
+    uint32_t running = !(regs->SR & (1 << SR_IDLE)); 
+
+    uint32_t trig_mode = trigEvSource();
+    
+    if(trig_mode == TRIG_EVENT){
         for(int i = 0; i < BANK_NUM; i ++){
-            if(ev == regs->START[i]){
-                regs->CR |= 1 << CR_START;
-            }
-            #ifdef DEBUG
             if(ev == regs->STOP[i]){
-                TM_PRINTF("DEBUG: stopped log recieved stop event\n");
-                return -1;
+                stopLog = 1; 
+                if((regs->CR >> CR_MODE) & 0b01){
+                    switchLog = 1;
+                }
             }
-            #endif
         }
-    }else{ // лог запущен
         for(int i = 0; i < BANK_NUM; i ++){
-            if(ev == regs->STOP[i]){
-                regs->CR |= 1 << CR_STOP;
-            }
-            #ifdef DEBUG
             if(ev == regs->START[i]){
-                TM_PRINTF("DEBUG: running log recieved start event\n");
-                return -1;
+                startLog = 1;
             }
-            #endif
+        }
+    } else if(trig_mode == TRIG_EXTERNAL){
+        if(ev == EV_LOG_STOP){
+            stopLog = 1; 
+            if((regs->CR >> CR_MODE) & 0b01){
+                switchLog = 1;
+            }
+        }
+        if(ev == EV_LOG_START){
+            startLog = 1;
         }
     }
+
     return 0;
 }
 
 
 void printLog(){
-    logRegs* regs = (logRegs*) REGS_BASE;
+    logRegs* regs = (logRegs*) REGS_BASE_LOG;
     uint32_t * log0 = bankAddrs[0], * log1 = bankAddrs[1];
-    uint32_t desc0 = regs->bankRegs[0].cfg, desc1 = regs->bankRegs[1].cfg;
+    uint32_t desc0 = integratorCfgConvert(regs->bankRegs[0].cfg), desc1 = integratorCfgConvert(regs->bankRegs[1].cfg);
     uint32_t esize0 = logEntrySize(desc0), esize1 = logEntrySize(desc1);
     size_t size0 = regs->bankRegs[0].size * esize0, size1 = regs->bankRegs[1].size * esize1;
 
-    TM_PRINTF("log0\n\r");
+    PRINTF("log0\n\r");
     for(size_t i = 0; i < size0; i ++){
-        uint32_t data = log0[i];
-        TM_PRINTF("%lud\t", data);
+        if(i%2 == 0){
+            uint32_t data = log0[i];
+            PRINTF("%lu\t", data);
+        }else {
+            int32_t data = ((int32_t *)log0)[i];
+            PRINTF("%d\t", data);
+        }
         if(i%esize0 == esize0-1){
-            TM_PRINTF("\n\r");
+            PRINTF("\n\r");
         }
     }
 
-    TM_PRINTF("log1\n\r");
+    PRINTF("log0x64\n\r");
+    for(size_t i = 0; i < size0 / 2; i ++){
+        int64_t data = ((int64_t *)log0)[i];
+        PRINTF("%lld\t", data);
+        if(i%(esize0/2) == (esize0/2)-1){
+            PRINTF("\n\r");
+        }
+    }
+
+    PRINTF("log1\n\r");
     for(size_t i = 0; i < size1; i ++){
         uint32_t data = log1[i];
-        TM_PRINTF("%lud\t", data);
+        PRINTF("%lu\t", data);
         if(i%esize1 == esize1-1){
-            TM_PRINTF("\n\r");
+            PRINTF("\n\r");
         }
     }
 

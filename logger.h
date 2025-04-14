@@ -3,7 +3,7 @@
 #include "main.h"
 
 #define BANK_NUM 2
-#define BANK_MAX_SIZE 100000
+#define BANK_MAX_SIZE 1024*1024*256/4
 
 typedef struct
 {
@@ -62,12 +62,14 @@ typedef struct
 typedef struct
 {
     uint32_t desc;
-    uint32_t integralDigital;
-    uint32_t integralAnalog;
+    uint32_t integral_low;
+    uint32_t integral_high;
+    uint32_t ADC;
+    uint32_t DAC;
     uint32_t B;
 } logIntegrator;
 
-logRegs * loggerRegPtr();
+volatile logRegs * loggerRegPtr();
 void loggerInit();
 uint32_t logRunning();
 

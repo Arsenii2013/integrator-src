@@ -1,0 +1,114 @@
+#ifndef _SCR_H_
+#define _SCR_H_
+#include "main.h"
+
+#define SCR_EVENTS_N 4
+typedef struct
+{
+    uint32_t SR;
+    uint32_t CR;
+    uint32_t CR_S;
+    uint32_t CR_C;
+    uint32_t AFE_ERR;
+    uint32_t LOG_ERR;
+    uint32_t HP_ERR;
+    uint32_t MODE;
+    uint32_t EXT;
+    uint32_t B0;
+    uint32_t K_ANALOG_TO_B;
+    uint32_t BSER_IN;
+    uint32_t K_B_TO_ANALOG;
+    uint32_t BSER_OUT;
+    uint32_t START_EV[SCR_EVENTS_N];
+    uint32_t STOP_EV[SCR_EVENTS_N];
+    uint32_t ZERO_EV;
+    uint32_t CALIBRATION_EV;
+    uint32_t PULSE_DURATION;
+    uint32_t PAUSE_DURATION;
+} statusControlRegisters;
+
+#define SR_RUN              0
+#define SR_CAL_RUN          1
+#define SR_ERROR            2
+#define SR_INITDONE         3
+
+#define CR_CLEAR            0
+
+#define EXT_EXT             0
+#define EXT_CYCLE_CAL       1
+#define EXT_CAL             2
+#define EXT_SOFT            3
+
+#define HP_ERR_TIME         0
+#define HP_ERR_OVERFLOW     1
+#define HP_ERR_INVALID      2
+
+#define AFE_ERR_CALIBRATION 0
+#define AFE_ERR_STARTSTOP   1
+#define AFE_ERR_STOPSTOP    2
+#define AFE_ERR_STARTSTART  3
+#define AFE_ERR_STATE       4
+#define AFE_ERR_INIT        7
+
+#define LOG_ERR_SWITCH      0
+#define LOG_ERR_STARTSTOP   1
+#define LOG_ERR_STOPSTOP    2
+#define LOG_ERR_STARTSTART  3
+#define LOG_ERR_OVERFLOW    4
+
+#define MODE_INPUT          0
+#define MODE_DAC_ENA        1
+#define MODE_BSER_ENA       2
+
+void statusRun(uint32_t state);
+void statusCalRun(uint32_t state);
+void statusAFEInitdone(uint32_t state);
+
+void statusNotEnoughtTime();
+void statusOverflowEvents();
+void statusInvalidEvents();
+
+void statusAFEStartStop();
+void statusAFEStopStop();
+void statusAFEStartStart();
+void statusAFECallibration();
+void statusAFEState(uint32_t AFEState);
+void statusAFENotInited();
+
+void statusLogStartStop();
+void statusLogStopStop();
+void statusLogStartStart();
+void statusLogSwitch();
+void statusLogOverflow();
+
+int controlDDS_SYNC(void*);
+
+uint32_t controlStartEv(uint32_t i);
+uint32_t controlStopEv(uint32_t i);
+uint32_t controlZeroEv();
+uint32_t controlCalEv();
+
+float controlB0();
+float controlCoeffAB();
+float controlBserIn();
+float controlCoeffBA();
+float controlBserOut();
+
+uint32_t controlInput();
+uint32_t controlDACEna();
+uint32_t controlBserEna();
+
+uint32_t controlExtTrig();
+uint32_t controlExtTrigCycCal();
+uint32_t controlExtTrigCal();
+uint32_t controlExtTrigSoft();
+void statusExtTrigSoft();
+void statusExtTrigCal();
+
+uint32_t controlPulseDuration();
+uint32_t controlPauseDuration();
+
+void initSCR();
+volatile statusControlRegisters * SCRegPtr();
+
+#endif // _SCR_H_

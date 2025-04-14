@@ -1,125 +1,169 @@
 #include "main.h"
+#include "PSPL.h"
 #include "logger.h"
 #include "scheduler.h"
+//#include "sin_integral_emulator.h"
+#include "AFE.h"
+#include "scr.h"
+#include "PSPL.h"
+#include "AFE_emulator.h"
+#include "ext_trig.h"
+#include "ev_seq.h"
 
 #ifdef TEST
 #include "test_gen.h"
 #endif
 
 #ifndef TEST
-XGpioPs bank2;
-
-#define EMIO_0_PIN      54
-#define DDS_SYNC_PIN    EMIO_0_PIN
-#define GP0_START       0x40000000
-
-#define PS_MEM_OFFS     0x900
-#define CR              0x1
-
-#define EVENT_FIFO_OFFS 0xA00
-
-#define SR              0x0
-#define DATA            0x5
+#include "xil_cache.h"    
+#include "xil_mmu.h"    
 #endif
 
 int DDS_SYNCPrint(void *){
-    TM_PRINTF("DDS_SYNC!!!\n\r");
+    //PRINTF("DDS_SYNC\n\r");
     return 0;
 }
 int eventPrint(uint32_t ev, void *){
-    TM_PRINTF("Event %d!!!\n\r", ev);
+    //PRINTF("Event %d\n\r", ev);
+    return 0;
+}
+int eventPrintNZero(uint32_t ev, void *){
+    if(ev != 0)
+        PRINTF("DEBUG: event %d\n\r", ev);
     return 0;
 }
 
-int eventReturn(uint32_t ev, void *){
-    TM_PRINTF("Return %d!!!\n\r", ev);
-    return ev;
-}
-int DDS_SYNCReturn(void *){
-    TM_PRINTF("DDS_SYNC -1!!!\n\r");
-    return -1;
-}
+uint32_t appRunning = 0;
 
-int eventAppData(uint32_t ev, void * appData){
-    TM_PRINTF("AppData %d!!!\n\r", *(uint32_t*)appData);
-    *(uint32_t*)appData = ev;
-    return 0;
-}
-int DDS_SYNCAppData(void * appData){
-    TM_PRINTF("AppData %d!!!\n\r", *(uint32_t*)appData);
-    return 0;
-}
+int eventApp(uint32_t ev, void*){
+    if(ev == 0){
+        return 0;
+    }
+    uint32_t trig_mode = trigEvSource();
 
-int eventPrintLog(uint32_t ev, void *){
-    if(ev == 0x20){
-        printLog();
+    if(trig_mode == TRIG_EVENT){
+        for(int i = 0; i < 4; i++){
+            if(ev == controlStartEv(i)){
+                appRunning = 1;
+            }
+            if(ev == controlStopEv(i)){
+                appRunning = 0;
+            }
+        }
+    } else if(trig_mode == TRIG_EXTERNAL){
+        if(ev == EV_INT_START){
+            appRunning = 1;
+        }
+        if(ev == EV_INT_STOP){
+            appRunning = 0;
+        }
     }
     return 0;
 }
+
+int DDS_SYNCApp(void*){
+    if(appRunning){
+        float B = MFMGetB();
+        int64_t intergral = MFMGetIntegral();
+        int32_t ADC = MFMGetADC();
+        uint32_t DAC = MFMGetDAC();
+
+        logIntegrator e = {.B = *(uint32_t *)&B, .ADC = ADC, .DAC = DAC, .integral_low = intergral, .integral_high = intergral >> 32};
+        //PRINTF("%x, %x, %x, %x\n\r", e.B, e.ADC, e.integral_low, e.integral_high);
+        if(logRunning()){
+            logg(*(logEntry *) &e);
+        }
+    }
+    return 0;
+}
+
+#ifndef TEST
+int DDS_SYNCCacheInvalidate(void*){
+    //Xil_DCacheFlush();
+    Xil_DCacheInvalidateRange((intptr_t)loggerRegPtr(), sizeof(logRegs));
+    Xil_DCacheInvalidateRange((intptr_t)SCRegPtr(), sizeof(statusControlRegisters));
+    return 0;
+}
+
+int DDS_SYNCCacheFlush(void*){
+    //Xil_DCacheFlush();
+    Xil_DCacheFlushRange((intptr_t)loggerRegPtr(), sizeof(logRegs));
+    Xil_DCacheFlushRange((intptr_t)SCRegPtr(), sizeof(statusControlRegisters));
+    return 0;
+}
+#endif
 
 #ifdef TEST
 void PCIELoggerSetup(){
-    logRegs * reg = loggerRegPtr();
-    reg->CFG  = 0x7;
-    reg->DCM  = 0;
-    reg->START[0] = 0x12;
-    reg->STOP[0] = 0x18;
+    logRegs * regLog = loggerRegPtr();
+    regLog->CFG  = 0x6;
+    regLog->DCM  = 0;
+    regLog->START[0] = 0x12;
+    regLog->STOP[0] = 0x18;
+
+    statusControlRegisters * regSC = SCRegPtr(); 
+    regSC->B0 = 10;
+    regSC->START_EV = 0x13;
+    regSC->STOP_EV = 0x17;
+    regSC->K_ANALOG_TO_B = 1; 
+    regSC->K_B_TO_ANALOG = 1;
+    regSC->MODE = MFM_MODE_ANALOG_TO_ANALOG;
 }
 #endif
 
-#ifndef TEST
-void init(){
-    XGpioPs_Config *conf2 = XGpioPs_LookupConfig(XPAR_PS7_GPIO_0_DEVICE_ID);
-    XGpioPs_CfgInitialize(&bank2, conf2, conf2->BaseAddr);
-
-    XGpioPs_SetDirectionPin(&bank2, EMIO_0_PIN, 0x0);
-    XGpioPs_SetDirection(&bank2, XGPIOPS_BANK2, 0xffffffff);
-    XGpioPs_SetOutputEnable(&bank2, XGPIOPS_BANK2, 0xffffffff);
-
-    XGpioPs_Write(&bank2, XGPIOPS_BANK2, 0x00FF0000);
+void SCUInit(){
+    Xil_SetTlbAttributes(0xFFF00000,0x15DE6);
 }
-
-uint32_t readDDS_SYNC(){
-    return XGpioPs_ReadPin(&bank2, DDS_SYNC_PIN);
-}
-uint32_t readEvent(){
-    if(!(*((volatile uint32_t *) GP0_START + EVENT_FIFO_OFFS + SR) & 0x2)){
-        return *((volatile uint32_t *) GP0_START + EVENT_FIFO_OFFS + DATA);
-    }
-    return 0;
-}
-#endif
 
 int main()
 {
-
-    uint32_t ev = 0;
-    uint32_t sync = 0;
-    
+    cyclicBuffer ev_buff = {.size = 0, .start = 0, .data = {0}};
+    uint32_t     ev_buff_flat [FIFO_SIZE];
     #ifdef TEST
     uint32_t repeat = 0;
 
     uint32_t eventsN   = 5;
     uint32_t events [] = {0x12, 0x13, 0x17, 0x18, 0x20};
-    uint64_t delays [] = {0,    115,  200,  376,  500};
-    testGenInit(events, delays, eventsN, repeat);
+    uint64_t cycles [] = {0,    0,    100,  100,  120};
+    testGenInit(events, cycles, eventsN, repeat);
+    AFEEmulinit();
     #else
-    #ifdef DEBUG
-    TM_PRINTF("start\n\r");
-    #endif
     init_platform();
-    init();
+    SCUInit();
+    initPStoPL();
+    PRINTF("start\n\r");
+
+    #ifdef DEBUG
+    volatile uint32_t tmp = readEvent();
+    PRINTF("%d\n\r", tmp);
+    #endif
     #endif
 
-    uint32_t lev = 0;
+    initSCR();
     loggerInit();
+    #ifndef TEST
+    //DDS_SYNCCacheFlush(NULL);
+    #endif
 
     schedulerRecord apps[] = {
-        {.name="print", .DDS_SYNCCallback=DDS_SYNCPrint, .eventCallback=eventPrint, .appData=NULL}, 
-        //{.name="return", .DDS_SYNCCallback=DDS_SYNCReturn, .eventCallback=eventReturn, .appData=NULL}, 
-        //{.name="data", .DDS_SYNCCallback=DDS_SYNCAppData, .eventCallback=eventAppData, .appData=&lev}, 
-        //{.name="logger", .DDS_SYNCCallback=loggerDDS_SYNC, .eventCallback=loggerEvent, .appData=NULL}, 
-        //{.name="printLog", .DDS_SYNCCallback=NULL, .eventCallback=eventPrintLog, .appData=NULL}, 
+        #ifdef DEBUG
+        {.name="print", .DDS_SYNCCallback=DDS_SYNCPrint, .eventCallback=eventPrintNZero, .appData=NULL}, 
+        #endif
+        #ifndef TEST
+        //{.name="cacheInv", .DDS_SYNCCallback=DDS_SYNCCacheInvalidate, .eventCallback=NULL, .appData=NULL}, 
+        #endif
+        {.name="control", .DDS_SYNCCallback=controlDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
+        //{.name="print", .DDS_SYNCCallback=NULL, .eventCallback=eventPrintNZero, .appData=NULL}, 
+        
+        {.name="logger", .DDS_SYNCCallback=loggerDDS_SYNC, .eventCallback=loggerEvent, .appData=NULL}, 
+        //{.name="AFEEmul", .DDS_SYNCCallback=AFEEmulDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
+        {.name="app", .DDS_SYNCCallback=DDS_SYNCApp, .eventCallback=eventApp, .appData=NULL}, 
+        {.name="AFE", .DDS_SYNCCallback=AFEDDS_SYNC, .eventCallback=AFEEvent, .appData=NULL}, 
+        {.name="ext", .DDS_SYNCCallback=trigDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
+        #ifndef TEST
+        //{.name="stop", .DDS_SYNCCallback=stopDDS_SYNC, .eventCallback=NULL, .appData=NULL}, 
+        //{.name="cacheFlush", .DDS_SYNCCallback=DDS_SYNCCacheFlush, .eventCallback=NULL, .appData=NULL}, 
+        #endif
         {.name="",     .DDS_SYNCCallback=NULL,          .eventCallback=NULL,       .appData=NULL}, 
     };
 
@@ -128,35 +172,47 @@ int main()
     #ifdef TEST
     PCIELoggerSetup();
     #endif
+    #ifndef TEST
+    clearEvents();
+    #endif
 
-    while (ev != 0x20) {
+    //DDS_SYNCCacheInvalidate(NULL);
+    while (1) {
         #ifdef TEST
-        sync = testGenDDS_SYNC();
-        ev = testGenEvent();
+        testWaitDDS_SYNC();
+        testReadEvents(&ev_buff);
         #else
-        sync = readDDS_SYNC();
-        ev = readEvent();
+        waitDDS_SYNC(0);
+        
+        uint32_t src = trigEvSource();
+        if(src == TRIG_EVENT){
+            readEvents(&ev_buff);
+        } else if(src == TRIG_EXTERNAL) {
+            seqReadEvents(&ev_buff);
+            clearEvents();
+        }
         #endif
 
-        if(sync){
-            schedulerDDS_SYNC();
+        schedulerDDS_SYNC();
+
+        uint32_t events_untill_sync = cyclicBufferReadUntillLast(&ev_buff, ev_buff_flat, 0x100);
+        uint32_t sync_cnt = 0;
+        //PRINTF("%d\n\r", events_untill_sync);
+        for(uint32_t i = 0; i < events_untill_sync; i++){
+            schedulerEvent(ev_buff_flat[i] & 0xff);
+            if(ev_buff_flat[i] & 0x100){
+                sync_cnt++;
+            }
+        }   
+        if(sync_cnt > 1){
+            statusNotEnoughtTime();
         }
-        if(ev){
-            schedulerEvent(ev);
-        }
-        logIntegrator entry = {.integralDigital=ev, .integralAnalog=ev, .B=ev};
-        if(ev && logRunning())
-            logg(*((logEntry*)&entry));
-        //TM_PRINTF("0x%x\n", ev);
+
     }
+    printLog();
     
     #ifndef TEST
     cleanup_platform();
-
-    #ifdef DEBUG
-    TM_PRINTF("start\n\r");
-    #endif
     #endif
     return 0;
 }
-
